@@ -65,7 +65,21 @@ button { font-family: inherit; cursor: pointer; }
 .pcard { width: var(--card-w); height: var(--card-h); border-radius: 7px; overflow: hidden; box-shadow: 0 3px 8px rgba(0,0,0,.45); background: #fff; }
 .pcard img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .pcard.back { background: #1b3a8a; }
-.pcard.muck { opacity: .35; }
+.pcard.muck { opacity: .35; transition: opacity .3s; }
+
+/* ---- 3D 플립 카드 (딜·뒤집기 연출) ---- */
+.pcard.flipc { background: transparent; box-shadow: none; perspective: 760px; }
+.pcard.flipc .fi { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .52s cubic-bezier(.2,.85,.3,1); transform: rotateY(180deg); }
+.pcard.flipc.up .fi { transform: rotateY(0deg); }
+.pcard.flipc .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 7px; overflow: hidden; box-shadow: 0 3px 8px rgba(0,0,0,.45); background: #fff; }
+.pcard.flipc .front { transform: rotateY(0deg); }
+.pcard.flipc .back { transform: rotateY(180deg); background: #1b3a8a; }
+.pcard.flipc .face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* 딜 슬라이드(가운데 덱에서 미끄러져 내려옴) */
+@keyframes dealIn { from { transform: translate(var(--dx,0), -54px) scale(.84); opacity: 0; } to { transform: none; opacity: 1; } }
+.pcard.anim { animation: dealIn .34s cubic-bezier(.2,.85,.3,1) both; }
+/* 베팅 칩 슬라이드 */
+.bet-chip { transition: transform .35s ease, opacity .3s; }
 
 .board-area { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .pot { background: rgba(0,0,0,.4); border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 16px; padding: 5px 18px; border-radius: 30px; }

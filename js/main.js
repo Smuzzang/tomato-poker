@@ -61,7 +61,7 @@
     $('#boardMsg').textContent = '';
     render();
     SFXdeal();
-    setTimeout(drive, 500);
+    setTimeout(drive, 950); // 카드 딜 연출이 끝난 뒤 베팅 시작
   }
 
   /* ---------------- 진행(턴 분배) ---------------- */
@@ -69,6 +69,7 @@
     const s = App.state; if (!s) return;
     if (s.phase === 'done') { onHandDone(); return; }
     render();
+    const pause = App._streetPause || 0; App._streetPause = 0;  // 공용패 깔린 직후 텀
     if (s.toAct === 1) { // AI
       hideActions();
       App.busy = true;
@@ -81,10 +82,10 @@
         App.busy = false;
         afterStreetFx(before);
         drive();
-      }, 850 + Math.random() * 500);
+      }, pause + 800 + Math.random() * 450);
     } else { // 나
-      App.busy = false;
-      showActions();
+      App.busy = true; hideActions();
+      setTimeout(() => { App.busy = false; if (App.state && App.state.phase === 'betting' && App.state.toAct === 0) showActions(); }, pause + 120);
     }
   }
 
@@ -95,6 +96,7 @@
     if (streetOf(s) !== before) {
       const names = { flop: '플랍', turn: '턴', river: '리버' };
       if (names[s.street]) { $('#boardMsg').textContent = names[s.street]; SFXdeal(); }
+      App._streetPause = 850;  // 공용패 뒤집히는 동안 잠깐 멈춤
     }
   }
 
@@ -210,16 +212,53 @@
     $('#seatMe').classList.toggle('active', myTurn);
     $('#seatOpp').classList.toggle('active', oppTurn);
   }
-  function renderHole(box, hole, faceUp, folded) {
-    box.innerHTML = '';
-    hole.forEach(c => { const el = Cards.makeCardEl(c, faceUp); if (folded) el.classList.add('muck'); box.appendChild(el); });
+  /* 3D 플립 카드 엘리먼트 (앞면+뒷면) */
+  function flipCardEl(card) {
+    const el = document.createElement('div'); el.className = 'pcard flipc';
+    const fi = document.createElement('div'); fi.className = 'fi';
+    const front = document.createElement('div'); front.className = 'face front';
+    const fimg = document.createElement('img'); fimg.src = Cards.imgPath(card); front.appendChild(fimg);
+    const back = document.createElement('div'); back.className = 'face back';
+    const bimg = document.createElement('img'); bimg.src = 'cards/back.png'; back.appendChild(bimg);
+    fi.appendChild(front); fi.appendChild(back); el.appendChild(fi);
+    el.dataset.card = Cards.imgCode(card);
+    return el;
   }
-  function renderCommunity(comm) {
-    const box = $('#community'); box.innerHTML = '';
-    for (let i = 0; i < 5; i++) {
-      if (comm[i]) box.appendChild(Cards.makeCardEl(comm[i], true));
-      else { const d = document.createElement('div'); d.className = 'slot'; box.appendChild(d); }
+
+  /* 손패: 카드가 바뀌면 딜 연출, faceUp만 바뀌면 제자리 뒤집기 */
+  function renderHole(box, hole, faceUp, folded) {
+    const codes = hole.map(c => Cards.imgCode(c)).join(',');
+    if (box.dataset.codes !== codes) {
+      box.dataset.codes = codes; box.innerHTML = '';
+      hole.forEach((c, i) => {
+        const el = flipCardEl(c); if (folded) el.classList.add('muck');
+        el.classList.add('anim'); el.style.setProperty('--dx', (i === 0 ? '14px' : '-14px'));
+        box.appendChild(el);
+        if (faceUp) setTimeout(() => el.classList.add('up'), 180 + i * 130);
+      });
+      box.dataset.up = faceUp ? '1' : '0';
+    } else {
+      if ((box.dataset.up === '1') !== !!faceUp) {  // 공개 상태 변화 → 제자리 뒤집기
+        box.dataset.up = faceUp ? '1' : '0';
+        [...box.children].forEach((el, i) => setTimeout(() => el.classList.toggle('up', !!faceUp), i * 140));
+      }
+      [...box.children].forEach(el => el.classList.toggle('muck', !!folded));
     }
+  }
+
+  /* 공용패: 새로 깔리는 카드만 덱에서 미끄러져 내려와 순차로 뒤집힘 */
+  function renderCommunity(comm) {
+    const box = $('#community');
+    if (comm.length < (App._commShown || 0)) { box.innerHTML = ''; App._commShown = 0; } // 새 핸드 리셋
+    if (box.children.length === 0) { for (let i = 0; i < 5; i++) { const d = document.createElement('div'); d.className = 'slot'; box.appendChild(d); } }
+    const shown = App._commShown || 0;
+    for (let i = shown; i < comm.length; i++) {
+      const el = flipCardEl(comm[i]); el.classList.add('anim');
+      box.replaceChild(el, box.children[i]);
+      const delay = (i - shown) * 170;
+      setTimeout(() => el.classList.add('up'), 230 + delay);
+    }
+    App._commShown = comm.length;
   }
   function showBet(el, amt) { if (amt > 0) { el.hidden = false; el.textContent = amt; } else el.hidden = true; }
 
