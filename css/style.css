@@ -3,6 +3,7 @@
   --card-w: clamp(54px, 9vmin, 84px); --card-h: calc(var(--card-w) * 1.39);
 }
 * { box-sizing: border-box; margin: 0; }
+[hidden] { display: none !important; }   /* .lobby/.table/.modal의 display:flex가 hidden을 덮지 않게 */
 html, body { height: 100%; }
 body {
   font-family: -apple-system, "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
