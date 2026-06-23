@@ -2,20 +2,116 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>토마토 포커 — Tomato Poker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23e23b2e'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/style.css?v=1" />
 </head>
 <body>
-  <main class="wrap">
-    <div class="brand">
-      <h1>토마토 포커</h1>
-      <p class="tagline">Tomato Poker · Tomato Arcade</p>
+<div id="app">
+
+  <!-- ===== 로비 ===== -->
+  <section id="lobby" class="lobby">
+    <div class="lobby-wrap">
+      <div class="lobby-card">
+        <div class="brand"><h1>토마토 포커</h1><p class="tagline">Tomato Poker · 2인 헤즈업</p></div>
+
+        <label class="field"><span>닉네임</span>
+          <input id="nickname" type="text" maxlength="8" placeholder="이름을 입력하세요" /></label>
+
+        <div class="seg"><span class="seg-label">게임</span>
+          <div class="seg-btns" id="gameSeg">
+            <button data-game="holdem" class="on">텍사스 홀덤</button>
+            <button data-game="seven" title="준비 중">세븐포커</button>
+          </div>
+        </div>
+
+        <div class="seg"><span class="seg-label">난이도</span>
+          <div class="seg-btns" id="diffSeg">
+            <button data-diff="easy">쉬움</button>
+            <button data-diff="normal" class="on">보통</button>
+            <button data-diff="hard">어려움</button>
+          </div>
+        </div>
+
+        <button id="btnSingle" class="primary big">혼자 하기 (vs AI)</button>
+        <div class="divider"><span>온라인 대전</span></div>
+        <button id="btnHost" class="ghost">방 만들기</button>
+        <button id="btnHelp" class="link">규칙 보기</button>
+        <div id="help" class="help" hidden></div>
+      </div>
+
+      <div class="rooms-panel">
+        <div class="pr-head">열린 방 <span id="prCount"></span></div>
+        <div id="prList" class="pr-list"><div class="pr-empty">온라인 대전은 곧 업데이트됩니다</div></div>
+      </div>
     </div>
-    <p class="soon">🃏 준비 중입니다</p>
     <p class="credit">Tomato Arcade</p>
-  </main>
-  <script src="js/main.js"></script>
+  </section>
+
+  <!-- ===== 홀덤 테이블 ===== -->
+  <section id="table" class="table" hidden>
+    <button id="leaveBtn" class="leave-btn" title="나가기">🚪</button>
+
+    <!-- 상대 -->
+    <div class="seat opp" id="seatOpp">
+      <div class="pinfo">
+        <div class="pavatar" id="oppAvatar">🤖</div>
+        <div class="pmeta"><div class="pname" id="oppName">AI</div><div class="pstack" id="oppStack">0</div></div>
+        <span class="dealer-btn" id="oppDealer" hidden>D</span>
+      </div>
+      <div class="hole" id="oppHole"></div>
+      <div class="bet-chip" id="oppBet" hidden></div>
+    </div>
+
+    <!-- 보드 + 팟 -->
+    <div class="board-area">
+      <div class="pot" id="pot">팟 0</div>
+      <div class="community" id="community"></div>
+      <div class="board-msg" id="boardMsg"></div>
+    </div>
+
+    <!-- 나 -->
+    <div class="seat me" id="seatMe">
+      <div class="bet-chip" id="myBet" hidden></div>
+      <div class="hole" id="myHole"></div>
+      <div class="pinfo">
+        <div class="pavatar" id="myAvatar">🙂</div>
+        <div class="pmeta"><div class="pname" id="myName">나</div><div class="pstack" id="myStack">0</div></div>
+        <span class="dealer-btn" id="myDealer" hidden>D</span>
+      </div>
+    </div>
+
+    <!-- 액션 컨트롤 -->
+    <div class="actions" id="actions" hidden>
+      <button class="act fold" id="btnFold">폴드</button>
+      <button class="act call" id="btnCall">체크</button>
+      <button class="act raise" id="btnRaise">레이즈</button>
+      <div class="raise-panel" id="raisePanel" hidden>
+        <input type="range" id="raiseSlider" />
+        <div class="raise-row">
+          <button class="rq" data-q="0.5">½팟</button>
+          <button class="rq" data-q="1">팟</button>
+          <button class="rq" data-q="allin">올인</button>
+          <span class="raise-amt" id="raiseAmt">0</span>
+        </div>
+        <div class="raise-confirm">
+          <button class="act raise" id="btnRaiseDo">레이즈</button>
+          <button class="act fold" id="btnRaiseCancel">취소</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 모달 -->
+  <div id="modal" class="modal" hidden><div class="modal-box" id="modalBox"></div></div>
+  <div id="toasts" class="toasts"></div>
+</div>
+
+<script src="js/cards.js?v=1"></script>
+<script src="js/evaluator.js?v=1"></script>
+<script src="js/holdem.js?v=1"></script>
+<script src="js/ai.js?v=1"></script>
+<script src="js/main.js?v=1"></script>
 </body>
 </html>

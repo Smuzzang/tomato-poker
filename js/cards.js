@@ -39,5 +39,24 @@
     return d;
   }
 
-  root.Cards = { SUITS, makeDeck, makeRng, shuffle, rankStr, suitSym, isRed, cardId, cardLabel };
+  /* ---- 카드 이미지 (deckofcardsapi 클래식 PNG: 값+무늬, 10=0) ---- */
+  const IMG_VAL = { 10: '0', 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
+  const IMG_SUIT = ['S', 'H', 'D', 'C'];
+  function imgCode(c) { return (IMG_VAL[c.r] || String(c.r)) + IMG_SUIT[c.s]; }
+  function imgPath(c) { return 'cards/' + imgCode(c) + '.png'; }
+
+  /* DOM 카드 엘리먼트 (브라우저 전용) */
+  function makeCardEl(c, faceUp) {
+    const el = document.createElement('div');
+    el.className = 'pcard' + (faceUp && c ? '' : ' back');
+    const img = document.createElement('img');
+    img.src = (faceUp && c) ? imgPath(c) : 'cards/back.png';
+    img.alt = (faceUp && c) ? cardLabel(c) : '뒷면';
+    img.draggable = false;
+    el.appendChild(img);
+    if (c) el.dataset.card = imgCode(c);
+    return el;
+  }
+
+  root.Cards = { SUITS, makeDeck, makeRng, shuffle, rankStr, suitSym, isRed, cardId, cardLabel, imgCode, imgPath, makeCardEl };
 })(typeof window !== 'undefined' ? window : globalThis);
