@@ -81,6 +81,14 @@ button { font-family: inherit; cursor: pointer; }
 /* 베팅 칩 슬라이드 */
 .bet-chip { transition: transform .35s ease, opacity .3s; }
 
+/* 덱(딜러 패) — 카드가 여기서 날아감 */
+.deck { position: absolute; top: 27%; left: 50%; transform: translate(-50%, -50%); width: var(--card-w); height: var(--card-h); z-index: 2; border-radius: 7px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.5), 3px 3px 0 -1px #14306e, 6px 6px 0 -2px #0f255a; }
+.deck img { width: 100%; height: 100%; object-fit: cover; border-radius: 7px; display: block; }
+/* 날아가는 카드(딜) */
+.flyp { position: fixed; z-index: 45; border-radius: 7px; overflow: hidden; box-shadow: 0 8px 18px rgba(0,0,0,.55); will-change: transform; }
+.flyp img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
 .board-area { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .pot { background: rgba(0,0,0,.4); border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 16px; padding: 5px 18px; border-radius: 30px; }
 .community { display: flex; gap: 6px; min-height: var(--card-h); }

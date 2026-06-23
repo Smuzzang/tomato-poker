@@ -61,7 +61,7 @@
     $('#boardMsg').textContent = '';
     render();
     SFXdeal();
-    setTimeout(drive, 950); // 카드 딜 연출이 끝난 뒤 베팅 시작
+    setTimeout(drive, 1450); // 카드 딜(덱→손패) 연출이 끝난 뒤 베팅 시작
   }
 
   /* ---------------- 진행(턴 분배) ---------------- */
@@ -96,7 +96,7 @@
     if (streetOf(s) !== before) {
       const names = { flop: '플랍', turn: '턴', river: '리버' };
       if (names[s.street]) { $('#boardMsg').textContent = names[s.street]; SFXdeal(); }
-      App._streetPause = 850;  // 공용패 뒤집히는 동안 잠깐 멈춤
+      App._streetPause = 1150;  // 공용패가 덱에서 날아와 뒤집히는 동안 멈춤
     }
   }
 
@@ -200,8 +200,8 @@
     $('#oppStack').textContent = s.players[1].stack;
     $('#myDealer').hidden = s.button !== 0;
     $('#oppDealer').hidden = s.button !== 1;
-    renderHole($('#myHole'), s.players[0].hole, true, s.players[0].folded);
-    renderHole($('#oppHole'), s.players[1].hole, App.revealOpp, s.players[1].folded);
+    renderHole($('#oppHole'), s.players[1].hole, App.revealOpp, s.players[1].folded, 0);   // 딜: 상대 먼저
+    renderHole($('#myHole'), s.players[0].hole, true, s.players[0].folded, 150);            // 한 박자 뒤 내 패
     renderCommunity(s.community);
     const pot = s.players[0].committed + s.players[1].committed;
     $('#pot').textContent = '팟 ' + pot;
@@ -225,38 +225,71 @@
     return el;
   }
 
-  /* 손패: 카드가 바뀌면 딜 연출, faceUp만 바뀌면 제자리 뒤집기 */
-  function renderHole(box, hole, faceUp, folded) {
+  /* 카드를 덱에서 목표 자리로 날려보냄(딜) → 도착하면 실제 카드 노출(+뒤집기) */
+  function flyFromDeck(targetEl, opts) {
+    opts = opts || {};
+    const deck = $('#deck');
+    const tr = targetEl.getBoundingClientRect();
+    if (!deck || !tr.width) { targetEl.style.opacity = '1'; if (opts.reveal) targetEl.classList.add('up'); return; }
+    const dr = deck.getBoundingClientRect();
+    const fly = document.createElement('div'); fly.className = 'flyp';
+    fly.innerHTML = '<img src="cards/back.png">';
+    fly.style.left = dr.left + 'px'; fly.style.top = dr.top + 'px';
+    fly.style.width = dr.width + 'px'; fly.style.height = dr.height + 'px';
+    document.body.appendChild(fly);
+    const dx = tr.left - dr.left, dy = tr.top - dr.top, dur = opts.dur || 380, delay = opts.delay || 0;
+    let done = false;
+    const land = () => { // 도착: 실제 카드 노출(+뒤집기), 날아가던 카드 제거
+      if (done) return; done = true;
+      targetEl.style.opacity = '1';
+      if (opts.reveal) targetEl.classList.add('up');
+      try { fly.remove(); } catch (_) {}
+    };
+    setTimeout(() => {
+      let a;
+      try {
+        a = fly.animate([
+          { transform: 'translate(0,0) rotate(-7deg) scale(.95)' },
+          { transform: `translate(${dx}px,${dy}px) rotate(0deg) scale(1)` },
+        ], { duration: dur, easing: 'cubic-bezier(.25,.7,.3,1)', fill: 'forwards' });
+      } catch (_) {}
+      if (a) a.onfinish = land;
+      setTimeout(land, dur + 140); // 안전망: onfinish 안 와도(탭 숨김 등) 반드시 노출
+    }, delay);
+  }
+
+  /* 손패: 새 카드면 덱에서 날아와 놓임(dealBase=시작 딜레이), faceUp만 바뀌면 제자리 뒤집기 */
+  function renderHole(box, hole, faceUp, folded, dealBase) {
     const codes = hole.map(c => Cards.imgCode(c)).join(',');
     if (box.dataset.codes !== codes) {
       box.dataset.codes = codes; box.innerHTML = '';
       hole.forEach((c, i) => {
         const el = flipCardEl(c); if (folded) el.classList.add('muck');
-        el.classList.add('anim'); el.style.setProperty('--dx', (i === 0 ? '14px' : '-14px'));
         box.appendChild(el);
-        if (faceUp) setTimeout(() => el.classList.add('up'), 180 + i * 130);
+        if (dealBase != null) { el.style.opacity = '0'; flyFromDeck(el, { reveal: faceUp, delay: dealBase + i * 300 }); }
+        else if (faceUp) el.classList.add('up');
       });
       box.dataset.up = faceUp ? '1' : '0';
     } else {
-      if ((box.dataset.up === '1') !== !!faceUp) {  // 공개 상태 변화 → 제자리 뒤집기
+      if ((box.dataset.up === '1') !== !!faceUp) {  // 공개 상태 변화(쇼다운) → 제자리 뒤집기
         box.dataset.up = faceUp ? '1' : '0';
-        [...box.children].forEach((el, i) => setTimeout(() => el.classList.toggle('up', !!faceUp), i * 140));
+        [...box.children].forEach((el, i) => setTimeout(() => el.classList.toggle('up', !!faceUp), i * 150));
       }
       [...box.children].forEach(el => el.classList.toggle('muck', !!folded));
     }
   }
 
-  /* 공용패: 새로 깔리는 카드만 덱에서 미끄러져 내려와 순차로 뒤집힘 */
+  /* 공용패: 새로 깔리는 카드만 덱에서 날아와 순차로 뒤집힘 */
   function renderCommunity(comm) {
     const box = $('#community');
     if (comm.length < (App._commShown || 0)) { box.innerHTML = ''; App._commShown = 0; } // 새 핸드 리셋
     if (box.children.length === 0) { for (let i = 0; i < 5; i++) { const d = document.createElement('div'); d.className = 'slot'; box.appendChild(d); } }
     const shown = App._commShown || 0;
     for (let i = shown; i < comm.length; i++) {
-      const el = flipCardEl(comm[i]); el.classList.add('anim');
+      const el = flipCardEl(comm[i]);
       box.replaceChild(el, box.children[i]);
-      const delay = (i - shown) * 170;
-      setTimeout(() => el.classList.add('up'), 230 + delay);
+      el.style.opacity = '0';
+      flyFromDeck(el, { reveal: true, delay: (i - shown) * 200 });
     }
     App._commShown = comm.length;
   }
