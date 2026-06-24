@@ -89,10 +89,20 @@
     }
     positionSeats(n);
   }
+  // 자리 각도(도). 히어로=하단 중앙(90°), 나머지는 상단 중앙(270°, 딜러자리)을 비우고 양옆으로.
+  function seatDeg(i, n) {
+    if (n <= 2) return i === 0 ? 90 : 264;
+    if (i === 0) return 90;
+    const side = (i % 2 === 1) ? 1 : -1;           // 홀수=좌, 짝수=우
+    const rank = Math.ceil(i / 2);
+    const maxRank = Math.ceil((n - 1) / 2);
+    const spread = 124;                             // 하단에서 한쪽 최대 각(상단 ~112° 비움)
+    return 90 + side * rank * (spread / maxRank);
+  }
   function positionSeats(n) {
-    const seats = $('#seats'); const cx = 50, cy = 44, rx = 47, ry = 45;
+    const seats = $('#seats'); const cx = 50, cy = 46, rx = 48, ry = 46;
     for (let i = 0; i < n; i++) {
-      const ang = (90 + i * 360 / n) * Math.PI / 180;
+      const ang = seatDeg(i, n) * Math.PI / 180;
       const x = cx + rx * Math.cos(ang), y = cy + ry * Math.sin(ang);
       const seat = seats.children[i]; if (!seat) continue;
       seat.style.left = x + '%'; seat.style.top = y + '%';

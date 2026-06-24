@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>토마토 포커 — Tomato Poker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23e23b2e'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="css/style.css?v=11" />
+<link rel="stylesheet" href="css/style.css?v=12" />
 </head>
 <body>
 <div id="app">
@@ -61,7 +61,31 @@
   <section id="table" class="table" hidden>
     <button id="leaveBtn" class="leave-btn" title="나가기">🚪</button>
     <div class="dealer">
-      <div class="dealer-av">🤵</div>
+      <div class="dealer-av" aria-label="딜러">
+        <svg viewBox="0 0 100 100" width="100%" height="100%">
+          <defs><clipPath id="dc"><circle cx="50" cy="50" r="49"/></clipPath></defs>
+          <g clip-path="url(#dc)">
+            <rect width="100" height="100" fill="#243244"/>
+            <path d="M16 100 V88 Q50 70 84 88 V100Z" fill="#15151b"/>
+            <path d="M40 84 L50 98 L60 84 L55 78 H45Z" fill="#fff"/>
+            <path d="M43 86 L50 91 L57 86 L50 82Z" fill="#e23b2e"/>
+            <rect x="44" y="68" width="12" height="18" fill="#eabf95"/>
+            <ellipse cx="50" cy="45" rx="27" ry="29" fill="#2a1a14"/>
+            <ellipse cx="50" cy="48" rx="18.5" ry="22" fill="#f3c79c"/>
+            <path d="M31 41 Q50 19 69 41 Q67 28 50 26 Q33 28 31 41Z" fill="#2a1a14"/>
+            <path d="M29 43 Q26 62 35 73 Q29 52 35 41Z" fill="#2a1a14"/>
+            <path d="M71 43 Q74 62 65 73 Q71 52 65 41Z" fill="#2a1a14"/>
+            <ellipse cx="42.5" cy="49" rx="2.5" ry="3.1" fill="#3a2a24"/>
+            <ellipse cx="57.5" cy="49" rx="2.5" ry="3.1" fill="#3a2a24"/>
+            <path d="M38 43 Q42.5 41 47 43" stroke="#3a2a24" stroke-width="1.2" fill="none"/>
+            <path d="M53 43 Q57.5 41 62 43" stroke="#3a2a24" stroke-width="1.2" fill="none"/>
+            <path d="M45 59 Q50 63 55 59" stroke="#c0392b" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+            <circle cx="39" cy="55" r="2.6" fill="#f0a080" opacity=".45"/>
+            <circle cx="61" cy="55" r="2.6" fill="#f0a080" opacity=".45"/>
+          </g>
+          <circle cx="50" cy="50" r="48" fill="none" stroke="#e8b04a" stroke-width="3"/>
+        </svg>
+      </div>
       <div class="deck" id="deck"><img src="cards/back.png" alt="덱" /></div>
     </div>
     <div class="felt">
@@ -102,11 +126,11 @@
   <div id="toasts" class="toasts"></div>
 </div>
 
-<script src="js/cards.js?v=11"></script>
-<script src="js/evaluator.js?v=11"></script>
-<script src="js/holdemN.js?v=11"></script>
-<script src="js/seven.js?v=11"></script>
-<script src="js/ai.js?v=11"></script>
-<script src="js/main.js?v=11"></script>
+<script src="js/cards.js?v=12"></script>
+<script src="js/evaluator.js?v=12"></script>
+<script src="js/holdemN.js?v=12"></script>
+<script src="js/seven.js?v=12"></script>
+<script src="js/ai.js?v=12"></script>
+<script src="js/main.js?v=12"></script>
 </body>
 </html>
