@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>토마토 포커 — Tomato Poker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23e23b2e'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="css/style.css?v=15" />
+<link rel="stylesheet" href="css/style.css?v=17" />
 </head>
 <body>
 <div id="app">
@@ -60,9 +60,13 @@
   <!-- ===== 포커 테이블 (N인 라운드) ===== -->
   <section id="table" class="table" hidden>
     <button id="leaveBtn" class="leave-btn" title="나가기">🚪</button>
-    <div class="dealer">
-      <div class="dealer-av" aria-label="딜러"><img src="img/dealer.png" alt="딜러" /></div>
-      <div class="deck" id="deck"><img src="cards/back.png" alt="덱" /></div>
+    <div class="rank-guide" id="rankGuide">
+      <button class="rank-tab" id="rankTab">📖 족보 ▸</button>
+      <div class="rank-body" id="rankBody" hidden></div>
+    </div>
+    <div class="card-holder" aria-label="카드 홀더">
+      <div class="holder-box"><div class="deck" id="deck"><img src="cards/back.png" alt="덱" /></div></div>
+      <div class="holder-label">CARD HOLDER</div>
     </div>
     <div class="felt">
       <div class="felt-inner" id="feltInner">
@@ -76,8 +80,8 @@
     </div>
     <div class="hero-cards" id="heroCards"></div>
 
-    <!-- 액션 컨트롤 -->
-    <div class="actions" id="actions" hidden>
+    <!-- 액션 컨트롤 (항상 표시, 내 차례에만 활성화) -->
+    <div class="actions idle" id="actions">
       <button class="act fold" id="btnFold">폴드</button>
       <button class="act call" id="btnCall">체크</button>
       <button class="act raise" id="btnRaise">레이즈</button>
@@ -102,11 +106,11 @@
   <div id="toasts" class="toasts"></div>
 </div>
 
-<script src="js/cards.js?v=15"></script>
-<script src="js/evaluator.js?v=15"></script>
-<script src="js/holdemN.js?v=15"></script>
-<script src="js/seven.js?v=15"></script>
-<script src="js/ai.js?v=15"></script>
-<script src="js/main.js?v=15"></script>
+<script src="js/cards.js?v=17"></script>
+<script src="js/evaluator.js?v=17"></script>
+<script src="js/holdemN.js?v=17"></script>
+<script src="js/seven.js?v=17"></script>
+<script src="js/ai.js?v=17"></script>
+<script src="js/main.js?v=17"></script>
 </body>
 </html>

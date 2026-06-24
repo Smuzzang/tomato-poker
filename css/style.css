@@ -41,25 +41,21 @@ button { font-family: inherit; cursor: pointer; }
 .help { background: #171d1a; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 12px; font-size: 12.5px; line-height: 1.7; color: #c5d0ca; }
 .credit { color: #5c6a63; font-size: 12px; }
 
-/* ---------- 테이블 ---------- */
-.table { height: 100%; position: relative; display: flex; flex-direction: column; align-items: center;
-  padding: 8px; background: radial-gradient(ellipse at 50% 35%, #1b2622, #0b110e 75%); overflow: hidden; }
-.leave-btn { position: absolute; top: 10px; right: 12px; z-index: 20; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.18); color: #fff; border-radius: 9px; padding: 6px 9px; font-size: 15px; }
-
-/* 타원 펠트 */
-.felt { position: relative; width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 0 6px; }
-.felt-inner { position: relative; width: min(96vw, 1040px); aspect-ratio: 1.55 / 1; max-height: 96%;
-  border-radius: 48% / 50%;
-  background-color: #2a9468;
+/* ---------- 테이블 (맞고식 평평한 도포) ---------- */
+.table { height: 100%; position: relative; display: flex; flex-direction: column; align-items: center; padding: 8px; overflow: hidden;
+  background-color: #143b46;
   background-image:
-    radial-gradient(ellipse at 50% 40%, rgba(255,255,255,.07) 0%, rgba(6,30,22,0) 42%, rgba(5,26,19,.62) 100%),
+    radial-gradient(ellipse 78% 66% at 50% 44%, rgba(86,170,188,.30) 0%, rgba(13,38,48,0) 54%, rgba(3,13,18,.78) 100%),
     url('../img/felt.jpg');
   background-size: 100% 100%, 300px 300px;
   background-repeat: no-repeat, repeat;
-  background-blend-mode: overlay, multiply;
-  border: 9px solid #6b4427; box-shadow: 0 16px 44px rgba(0,0,0,.6), inset 0 0 70px rgba(0,0,0,.4), inset 0 0 0 3px rgba(255,255,255,.04); }
-@media (max-aspect-ratio: 1/1) { .felt-inner { aspect-ratio: 1.12 / 1; } }   /* 세로 화면: 더 둥근 테이블로 공간 채움 */
-.center-area { position: absolute; left: 50%; top: 40%; transform: translate(-50%,-50%); display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  background-blend-mode: soft-light, multiply; }
+.leave-btn { position: absolute; top: 10px; right: 12px; z-index: 20; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.18); color: #fff; border-radius: 9px; padding: 6px 9px; font-size: 15px; }
+
+/* 평평한 도포(전체 영역) — 테두리/타원 없음, 자리 배치용 컨테이너 */
+.felt { position: relative; width: 100%; flex: 1; min-height: 0; }
+.felt-inner { position: absolute; inset: 0; }
+.center-area { position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%); display: flex; flex-direction: column; align-items: center; gap: 7px; z-index: 3; }
 .pot-pill { background: rgba(0,0,0,.5); border: 1px solid var(--gold); color: #ffe9a8; font-weight: 900; font-size: clamp(13px,2.3vmin,19px); padding: 4px 16px; border-radius: 30px; white-space: nowrap; }
 .community { display: flex; gap: 5px; min-height: var(--card-h); }
 .community .pcard { width: var(--card-w); height: var(--card-h); }
@@ -108,12 +104,16 @@ button { font-family: inherit; cursor: pointer; }
 /* 베팅 칩 슬라이드 */
 .bet-chip { transition: transform .35s ease, opacity .3s; }
 
-/* 덱(딜러 패) — 카드가 여기서 날아감 */
-/* 딜러(상단) — 카드가 여기서 날아감 */
-.dealer { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); z-index: 7; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.dealer-av { width: 84px; height: 84px; border-radius: 50%; overflow: hidden; border: 3px solid var(--gold); background: #2a3340; box-shadow: 0 5px 18px rgba(0,0,0,.6); }
-.dealer-av img { width: 100%; height: 100%; object-fit: cover; display: block; object-position: 50% 18%; }
-.deck { width: calc(var(--card-w) * .76); height: calc(var(--card-h) * .76); border-radius: 6px;
+/* 카드 홀더(상단 중앙) — 카드가 여기서 자동으로 나옴 */
+.card-holder { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 7; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.holder-box { position: relative; padding: 9px 16px; border-radius: 11px;
+  background: linear-gradient(158deg, #3a4d57 0%, #1b2c34 60%, #11202730 100%);
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 8px 22px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.12), inset 0 -4px 9px rgba(0,0,0,.45); }
+.holder-box::after { content: ""; position: absolute; left: 16%; right: 16%; bottom: -5px; height: 7px; border-radius: 0 0 7px 7px;
+  background: linear-gradient(#0c181d, #060d11); box-shadow: 0 4px 8px rgba(0,0,0,.55); }
+.holder-label { font-size: 9px; font-weight: 800; letter-spacing: 2.5px; color: rgba(255,233,168,.65); text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.deck { width: calc(var(--card-w) * .76); height: calc(var(--card-h) * .76); border-radius: 6px; position: relative; z-index: 1;
   box-shadow: 0 3px 8px rgba(0,0,0,.5), 2px 2px 0 -1px #14306e, 4px 4px 0 -2px #0f255a; }
 .deck img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
 /* 날아가는 카드(딜) */
@@ -128,14 +128,18 @@ button { font-family: inherit; cursor: pointer; }
 .pcard.hidden-card { filter: brightness(.82) saturate(.9); }
 .pcard.hidden-card .back { box-shadow: inset 0 0 0 2px rgba(232,176,74,.35); }
 
-/* 액션 */
-.actions { display: flex; gap: 10px; align-items: flex-end; justify-content: center; padding-bottom: 6px; position: relative; min-height: 56px; }
-.act { border: none; border-radius: 12px; padding: 14px 22px; font-size: 16px; font-weight: 800; color: #fff; min-width: 92px; box-shadow: 0 4px 0 rgba(0,0,0,.25); }
+/* 액션 — 항상 같은 자리(레이아웃 고정). 내 차례에만 색상·활성화 */
+.actions { display: flex; gap: 10px; align-items: center; justify-content: center; padding-bottom: 10px; padding-top: 4px; position: relative; min-height: 74px; transition: opacity .2s; }
+.act { border: none; border-radius: 12px; padding: 14px 22px; font-size: 16px; font-weight: 800; color: #fff; min-width: 92px; box-shadow: 0 4px 0 rgba(0,0,0,.25); transition: filter .15s, opacity .15s, transform .05s; }
 .act:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.25); }
 .act.fold { background: #5b6b63; }
 .act.call { background: #2e8b57; }
 .act.raise { background: var(--tomato); }
-.act:disabled { opacity: .4; box-shadow: none; }
+.act:disabled { box-shadow: none; cursor: default; }
+/* 내 차례가 아닐 때: 자리는 유지하고 회색으로 비활성 */
+.actions.idle .act { filter: grayscale(.75) brightness(.62); opacity: .55; }
+.actions:not(.idle) .act:not(:disabled) { animation: actpop .22s ease; }
+@keyframes actpop { from { transform: translateY(5px); opacity: .4; } to { transform: none; opacity: 1; } }
 .raise-panel { position: absolute; bottom: 64px; left: 50%; transform: translateX(-50%); background: #1c2320; border: 1px solid rgba(255,255,255,.15); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; width: min(340px, 92vw); box-shadow: 0 10px 30px rgba(0,0,0,.5); z-index: 15; }
 .raise-panel input[type=range] { width: 100%; accent-color: var(--tomato); }
 .raise-row { display: flex; gap: 7px; align-items: center; }
@@ -164,6 +168,24 @@ button { font-family: inherit; cursor: pointer; }
 .sh .cards .pcard { width: 30px; height: 42px; border-radius: 4px; overflow: hidden; }
 .sh .cards .pcard img { width: 100%; height: 100%; object-fit: cover; }
 .sh .cat { font-size: 11px; font-weight: 800; color: #ffe9a8; }
+
+/* 족보(핸드 랭킹) 가이드 — 왼쪽, 펼침/접힘 */
+.rank-guide { position: absolute; left: 8px; top: 50px; z-index: 18; display: flex; flex-direction: column; align-items: flex-start; max-width: min(78vw, 312px); }
+.rank-tab { background: rgba(0,0,0,.58); border: 1px solid var(--gold); color: #ffe9a8; font-weight: 800; font-size: 13px; padding: 8px 13px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,.45); white-space: nowrap; }
+.rank-body { margin-top: 6px; width: 304px; max-width: 78vw; max-height: 74vh; overflow-y: auto; padding: 8px 10px 10px;
+  background: rgba(8,16,20,.94); border: 1px solid rgba(232,176,74,.42); border-radius: 13px; box-shadow: 0 14px 34px rgba(0,0,0,.6); -webkit-overflow-scrolling: touch; }
+.rg-title { font-size: 12px; font-weight: 900; color: #ffe9a8; padding: 4px 2px 8px; letter-spacing: .3px; position: sticky; top: -8px; background: rgba(8,16,20,.97); }
+.rg-row { padding: 7px 3px; border-bottom: 1px solid rgba(255,255,255,.07); }
+.rg-row:last-child { border-bottom: none; }
+.rg-head { display: flex; align-items: center; gap: 7px; }
+.rg-num { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); color: #1a1207; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+.rg-nm { font-size: 13px; font-weight: 800; color: #fff; }
+.rg-desc { font-size: 11px; color: #9fb3a9; margin: 2px 0 5px 25px; }
+.rg-ex { display: flex; gap: 3px; margin-left: 25px; flex-wrap: wrap; }
+.rg-card { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 28px; padding: 0 4px; background: #fff; border-radius: 4px; font-size: 13px; font-weight: 900; line-height: 1; box-shadow: 0 1px 3px rgba(0,0,0,.45); }
+.rg-card i { font-style: normal; margin-left: 1px; }
+.rg-card.red { color: #d6263a; }
+.rg-card.blk { color: #1a1a1a; }
 
 /* 토스트 */
 .toasts { position: fixed; top: 14%; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 60; pointer-events: none; }

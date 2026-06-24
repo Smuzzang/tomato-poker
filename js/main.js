@@ -35,6 +35,8 @@
     $('#btnRaiseDo').addEventListener('click', doRaise);
     $('#raiseSlider').addEventListener('input', () => $('#raiseAmt').textContent = fmt(Number($('#raiseSlider').value)));
     $('#raisePanel').querySelectorAll('.rq').forEach(b => b.addEventListener('click', () => quickRaise(b.dataset.q)));
+    $('#rankTab').addEventListener('click', toggleRankGuide);
+    renderRankGuide();
     window.addEventListener('resize', () => { if (!$('#table').hidden && App.state) positionSeats(App.nSeats); });
   }
   function segHandler(sel, key, cb) {
@@ -68,6 +70,7 @@
     else App.state = App.engine.newHand({ sb: SB, bb: BB, stacks: App.stacks.slice(), button: App.button, seed: rndSeed() });
     $('#modal').hidden = true; $('#boardMsg').textContent = '';
     resetCardAreas();
+    idleActions();
     render(true);
     setTimeout(drive, 1500); // 딜 연출 후 베팅
   }
@@ -100,7 +103,7 @@
     return 90 + side * rank * (spread / maxRank);
   }
   function positionSeats(n) {
-    const seats = $('#seats'); const cx = 50, cy = 46, rx = 48, ry = 46;
+    const seats = $('#seats'); const cx = 50, cy = 48, rx = 45, ry = 41;
     for (let i = 0; i < n; i++) {
       const ang = seatDeg(i, n) * Math.PI / 180;
       const x = cx + rx * Math.cos(ang), y = cy + ry * Math.sin(ang);
@@ -319,14 +322,53 @@
   }
 
   /* ---------------- 액션 컨트롤 ---------------- */
+  // 버튼은 항상 표시(레이아웃 고정). 내 차례면 활성·색상, 아니면 흐리게 비활성.
   function showActions() {
-    const la = App.engine.legalActions(App.state); if (!la) { hideActions(); return; }
-    $('#actions').hidden = false;
-    $('#btnFold').style.display = la.canCheck ? 'none' : '';
+    const la = App.engine.legalActions(App.state); if (!la) { idleActions(); return; }
+    $('#actions').classList.remove('idle');
+    const fold = $('#btnFold'); fold.disabled = false;
     const call = $('#btnCall'); call.disabled = false; call.textContent = la.canCheck ? '체크' : ('콜 ' + fmt(la.callAmount));
     const raise = $('#btnRaise'); raise.disabled = !la.canRaise; raise.textContent = la.toCall === 0 ? '벳' : '레이즈';
   }
-  function hideActions() { $('#actions').hidden = true; $('#raisePanel').hidden = true; }
+  function idleActions() {
+    $('#actions').classList.add('idle');
+    ['#btnFold', '#btnCall', '#btnRaise'].forEach(s => { $(s).disabled = true; });
+    $('#raisePanel').hidden = true;
+  }
+  function hideActions() { idleActions(); }
+
+  /* ---------------- 족보(핸드 랭킹) 가이드 ---------------- */
+  const RANKS = [
+    ['로열 스트레이트 플러시', '같은 무늬로 A·K·Q·J·10', ['AS', 'KS', 'QS', 'JS', 'TS']],
+    ['스트레이트 플러시', '같은 무늬 숫자 연속 5장', ['9H', '8H', '7H', '6H', '5H']],
+    ['포카드', '같은 숫자 4장', ['KS', 'KH', 'KD', 'KC', '7S']],
+    ['풀하우스', '트리플 + 페어', ['QS', 'QH', 'QD', '8C', '8S']],
+    ['플러시', '같은 무늬 5장 (숫자 무관)', ['AD', 'JD', '8D', '6D', '3D']],
+    ['스트레이트', '숫자 연속 5장 (무늬 무관)', ['7S', '6H', '5D', '4C', '3S']],
+    ['트리플', '같은 숫자 3장', ['9S', '9H', '9D', 'KC', '4S']],
+    ['투페어', '페어 2개', ['JS', 'JH', '5D', '5C', '9S']],
+    ['원페어', '같은 숫자 2장', ['TS', 'TH', 'AD', '7C', '2S']],
+    ['하이카드', '아무 조합도 없음 · 가장 높은 카드', ['AS', 'QH', '9D', '5C', '2S']],
+  ];
+  function cardChip(tok) {
+    const r = tok[0] === 'T' ? '10' : tok[0];
+    const sym = { S: '♠', H: '♥', D: '♦', C: '♣' }[tok[1]];
+    const red = tok[1] === 'H' || tok[1] === 'D';
+    return `<span class="rg-card ${red ? 'red' : 'blk'}">${r}<i>${sym}</i></span>`;
+  }
+  function renderRankGuide() {
+    const body = $('#rankBody'); if (!body || body.dataset.built) return;
+    body.innerHTML = `<div class="rg-title">포커 족보 (높음 → 낮음)</div>` + RANKS.map((r, i) =>
+      `<div class="rg-row"><div class="rg-head"><span class="rg-num">${i + 1}</span><span class="rg-nm">${r[0]}</span></div>
+        <div class="rg-desc">${r[1]}</div><div class="rg-ex">${r[2].map(cardChip).join('')}</div></div>`).join('');
+    body.dataset.built = '1';
+  }
+  function toggleRankGuide() {
+    const g = $('#rankGuide'), open = !g.classList.contains('open');
+    g.classList.toggle('open', open);
+    $('#rankBody').hidden = !open;
+    $('#rankTab').textContent = open ? '📖 족보 ▾' : '📖 족보 ▸';
+  }
 
   /* ---------------- 잡동사니 ---------------- */
   function announceAI(i, a) {
