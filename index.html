@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>토마토 포커 — Tomato Poker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23e23b2e'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="css/style.css?v=10" />
+<link rel="stylesheet" href="css/style.css?v=11" />
 </head>
 <body>
 <div id="app">
@@ -60,9 +60,12 @@
   <!-- ===== 포커 테이블 (N인 라운드) ===== -->
   <section id="table" class="table" hidden>
     <button id="leaveBtn" class="leave-btn" title="나가기">🚪</button>
+    <div class="dealer">
+      <div class="dealer-av">🤵</div>
+      <div class="deck" id="deck"><img src="cards/back.png" alt="덱" /></div>
+    </div>
     <div class="felt">
       <div class="felt-inner" id="feltInner">
-        <div class="deck" id="deck"><img src="cards/back.png" alt="덱" /></div>
         <div class="center-area">
           <div class="pot-pill"><span class="pot-ic">🪙</span> <span id="potAmt">0</span></div>
           <div class="community" id="community"></div>
@@ -99,11 +102,11 @@
   <div id="toasts" class="toasts"></div>
 </div>
 
-<script src="js/cards.js?v=10"></script>
-<script src="js/evaluator.js?v=10"></script>
-<script src="js/holdemN.js?v=10"></script>
-<script src="js/seven.js?v=10"></script>
-<script src="js/ai.js?v=10"></script>
-<script src="js/main.js?v=10"></script>
+<script src="js/cards.js?v=11"></script>
+<script src="js/evaluator.js?v=11"></script>
+<script src="js/holdemN.js?v=11"></script>
+<script src="js/seven.js?v=11"></script>
+<script src="js/ai.js?v=11"></script>
+<script src="js/main.js?v=11"></script>
 </body>
 </html>

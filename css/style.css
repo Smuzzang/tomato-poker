@@ -102,9 +102,12 @@ button { font-family: inherit; cursor: pointer; }
 .bet-chip { transition: transform .35s ease, opacity .3s; }
 
 /* 덱(딜러 패) — 카드가 여기서 날아감 */
-.deck { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); width: var(--card-w); height: var(--card-h); z-index: 2; border-radius: 7px;
-  box-shadow: 0 4px 10px rgba(0,0,0,.5), 3px 3px 0 -1px #14306e, 6px 6px 0 -2px #0f255a; }
-.deck img { width: 100%; height: 100%; object-fit: cover; border-radius: 7px; display: block; }
+/* 딜러(상단) — 카드가 여기서 날아감 */
+.dealer { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); z-index: 7; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.dealer-av { width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle at 50% 35%, #36506a, #16212c); border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 4px 12px rgba(0,0,0,.55); }
+.deck { width: calc(var(--card-w) * .76); height: calc(var(--card-h) * .76); border-radius: 6px;
+  box-shadow: 0 3px 8px rgba(0,0,0,.5), 2px 2px 0 -1px #14306e, 4px 4px 0 -2px #0f255a; }
+.deck img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
 /* 날아가는 카드(딜) */
 .flyp { position: fixed; z-index: 45; border-radius: 7px; overflow: hidden; box-shadow: 0 8px 18px rgba(0,0,0,.55); will-change: transform; }
 .flyp img { width: 100%; height: 100%; object-fit: cover; display: block; }
