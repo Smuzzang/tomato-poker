@@ -104,8 +104,8 @@ button { font-family: inherit; cursor: pointer; }
 /* 덱(딜러 패) — 카드가 여기서 날아감 */
 /* 딜러(상단) — 카드가 여기서 날아감 */
 .dealer { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); z-index: 7; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.dealer-av { width: 72px; height: 72px; border-radius: 50%; box-shadow: 0 5px 16px rgba(0,0,0,.6); }
-.dealer-av svg { display: block; border-radius: 50%; }
+.dealer-av { width: 84px; height: 84px; border-radius: 50%; overflow: hidden; border: 3px solid var(--gold); background: #2a3340; box-shadow: 0 5px 18px rgba(0,0,0,.6); }
+.dealer-av img { width: 100%; height: 100%; object-fit: cover; display: block; object-position: 50% 18%; }
 .deck { width: calc(var(--card-w) * .76); height: calc(var(--card-h) * .76); border-radius: 6px;
   box-shadow: 0 3px 8px rgba(0,0,0,.5), 2px 2px 0 -1px #14306e, 4px 4px 0 -2px #0f255a; }
 .deck img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
