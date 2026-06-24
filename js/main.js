@@ -85,7 +85,10 @@
         if (!App.state || App.state.phase !== 'betting' || App.state.toAct !== 1) return;
         const before = streetOf(App.state);
         const a = App.aiDecide(App.state, 1, App.diff);
+        const c1 = App.state.players[1].committed;
         App.engine.act(App.state, a);
+        if (App.state.players[1].committed > c1) flyChipToPot(1); // 칩 → 팟
+        if (a.type === 'fold') foldAnim(1);
         announceAI(a);
         App.busy = false;
         afterStreetFx(before);
@@ -120,8 +123,11 @@
     if (App.busy || !App.state || App.state.phase !== 'betting' || App.state.toAct !== 0) return;
     $('#raisePanel').hidden = true;
     const before = streetOf(App.state);
+    const c0 = App.state.players[0].committed;
     const r = App.engine.act(App.state, a);
     if (r && r.ok === false) { toast(r.error, 'red'); return; }
+    if (App.state.players[0].committed > c0) flyChipToPot(0); // 칩 → 팟
+    if (a.type === 'fold') foldAnim(0);
     afterStreetFx(before);
     drive();
   }
@@ -157,11 +163,13 @@
     if (r.showdown) $('#boardMsg').textContent = '';
     render();
     hideActions();
+    $('#pot').textContent = '팟 ' + r.pot;  // 분배 직전까지 팟 금액 유지
     App.stacks = r.stacks.slice();
     // 승자 강조
     const winSeat = r.winners.length === 2 ? null : (r.winners[0] === 0 ? '#seatMe' : '#seatOpp');
     if (winSeat) $(winSeat).classList.add('win-glow');
-    setTimeout(() => { $('#seatMe').classList.remove('win-glow'); $('#seatOpp').classList.remove('win-glow'); showResult(r); }, r.showdown ? 1400 : 700);
+    if (r.winners.length === 1) setTimeout(() => potToWinner(r.winners[0]), r.showdown ? 750 : 250); // 팟 → 승자 칩
+    setTimeout(() => { $('#seatMe').classList.remove('win-glow'); $('#seatOpp').classList.remove('win-glow'); showResult(r); }, r.showdown ? 1500 : 900);
   }
 
   function showResult(r) {
@@ -347,6 +355,48 @@
     raise.textContent = la.toCall === 0 ? '벳' : '레이즈';
   }
   function hideActions() { $('#actions').hidden = true; $('#raisePanel').hidden = true; }
+
+  /* ---------------- 칩/폴드 물리 연출 ---------------- */
+  function flyOne(fromR, toR, jitter, dur, easing) {
+    const chip = document.createElement('div'); chip.className = 'chip-fly'; chip.textContent = '🪙';
+    const fx = fromR.left + fromR.width / 2 - 15 + (jitter ? (Math.random() * 22 - 11) : 0);
+    const fy = fromR.top + fromR.height / 2 - 15;
+    chip.style.left = fx + 'px'; chip.style.top = fy + 'px';
+    document.body.appendChild(chip);
+    const dx = (toR.left + toR.width / 2) - (fromR.left + fromR.width / 2);
+    const dy = (toR.top + toR.height / 2) - (fromR.top + fromR.height / 2);
+    let done = false; const land = () => { if (done) return; done = true; try { chip.remove(); } catch (_) {} };
+    try {
+      const a = chip.animate([
+        { transform: 'translate(0,0) scale(.6)', opacity: 0 },
+        { transform: `translate(${dx * 0.5}px,${dy * 0.5}px) scale(1.15)`, opacity: 1, offset: .55 },
+        { transform: `translate(${dx}px,${dy}px) scale(.5)`, opacity: .15 },
+      ], { duration: dur || 440, easing: easing || 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' });
+      a.onfinish = land;
+    } catch (_) {}
+    setTimeout(land, (dur || 440) + 160);
+  }
+  /* 베팅: 플레이어 스택 → 팟으로 칩이 슥 */
+  function flyChipToPot(actorIdx) {
+    const from = $(actorIdx === 0 ? '#seatMe' : '#seatOpp'), to = $('#pot');
+    if (!from || !to) return;
+    flyOne(from.getBoundingClientRect(), to.getBoundingClientRect());
+  }
+  /* 폴드: 패가 접혀 사라짐 */
+  function foldAnim(actorIdx) {
+    const box = $(actorIdx === 0 ? '#myHole' : '#oppHole');
+    [...box.children].forEach((el, i) => {
+      try { el.animate([{ transform: 'translateY(0) rotate(0)', opacity: 1 }, { transform: 'translateY(28px) rotate(7deg)', opacity: .2 }], { duration: 380, delay: i * 60, easing: 'ease-in', fill: 'forwards' }); }
+      catch (_) { el.classList.add('muck'); }
+    });
+  }
+  /* 분배: 팟 → 승자 스택으로 칩 여러 개 */
+  function potToWinner(idx) {
+    const from = $('#pot'), to = $(idx === 0 ? '#myStack' : '#oppStack');
+    if (!from || !to) return;
+    const fr = from.getBoundingClientRect(), tr = to.getBoundingClientRect();
+    for (let k = 0; k < 6; k++) setTimeout(() => flyOne(fr, tr, true, 480, 'cubic-bezier(.4,.1,.6,1)'), k * 70);
+  }
 
   /* ---------------- 잡동사니 ---------------- */
   function announceAI(a) {
