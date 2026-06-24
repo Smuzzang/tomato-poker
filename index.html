@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>토마토 포커 — Tomato Poker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23e23b2e'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="css/style.css?v=7" />
+<link rel="stylesheet" href="css/style.css?v=10" />
 </head>
 <body>
 <div id="app">
@@ -23,6 +23,14 @@
           <div class="seg-btns" id="gameSeg">
             <button data-game="holdem" class="on">텍사스 홀덤</button>
             <button data-game="seven">세븐포커</button>
+          </div>
+        </div>
+
+        <div class="seg"><span class="seg-label">인원</span>
+          <div class="seg-btns" id="seatSeg">
+            <button data-seats="2">2인</button>
+            <button data-seats="4">4인</button>
+            <button data-seats="6" class="on">6인</button>
           </div>
         </div>
 
@@ -49,39 +57,21 @@
     <p class="credit">Tomato Arcade</p>
   </section>
 
-  <!-- ===== 홀덤 테이블 ===== -->
+  <!-- ===== 포커 테이블 (N인 라운드) ===== -->
   <section id="table" class="table" hidden>
     <button id="leaveBtn" class="leave-btn" title="나가기">🚪</button>
-    <div class="deck" id="deck"><img src="cards/back.png" alt="덱" /></div>
-
-    <!-- 상대 -->
-    <div class="seat opp" id="seatOpp">
-      <div class="pinfo">
-        <div class="pavatar" id="oppAvatar">🤖</div>
-        <div class="pmeta"><div class="pname" id="oppName">AI</div><div class="pstack" id="oppStack">0</div></div>
-        <span class="dealer-btn" id="oppDealer" hidden>D</span>
-      </div>
-      <div class="hole" id="oppHole"></div>
-      <div class="bet-chip" id="oppBet" hidden></div>
-    </div>
-
-    <!-- 보드 + 팟 -->
-    <div class="board-area">
-      <div class="pot" id="pot">팟 0</div>
-      <div class="community" id="community"></div>
-      <div class="board-msg" id="boardMsg"></div>
-    </div>
-
-    <!-- 나 -->
-    <div class="seat me" id="seatMe">
-      <div class="bet-chip" id="myBet" hidden></div>
-      <div class="hole" id="myHole"></div>
-      <div class="pinfo">
-        <div class="pavatar" id="myAvatar">🙂</div>
-        <div class="pmeta"><div class="pname" id="myName">나</div><div class="pstack" id="myStack">0</div></div>
-        <span class="dealer-btn" id="myDealer" hidden>D</span>
+    <div class="felt">
+      <div class="felt-inner" id="feltInner">
+        <div class="deck" id="deck"><img src="cards/back.png" alt="덱" /></div>
+        <div class="center-area">
+          <div class="pot-pill"><span class="pot-ic">🪙</span> <span id="potAmt">0</span></div>
+          <div class="community" id="community"></div>
+          <div class="board-msg" id="boardMsg"></div>
+        </div>
+        <div class="seats" id="seats"></div>
       </div>
     </div>
+    <div class="hero-cards" id="heroCards"></div>
 
     <!-- 액션 컨트롤 -->
     <div class="actions" id="actions" hidden>
@@ -109,11 +99,11 @@
   <div id="toasts" class="toasts"></div>
 </div>
 
-<script src="js/cards.js?v=7"></script>
-<script src="js/evaluator.js?v=7"></script>
-<script src="js/holdem.js?v=7"></script>
-<script src="js/seven.js?v=7"></script>
-<script src="js/ai.js?v=7"></script>
-<script src="js/main.js?v=7"></script>
+<script src="js/cards.js?v=10"></script>
+<script src="js/evaluator.js?v=10"></script>
+<script src="js/holdemN.js?v=10"></script>
+<script src="js/seven.js?v=10"></script>
+<script src="js/ai.js?v=10"></script>
+<script src="js/main.js?v=10"></script>
 </body>
 </html>

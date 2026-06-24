@@ -71,7 +71,8 @@
   /* 의사결정 → {type, amount?} (legalActions 범위 내 합법 액션) */
   function decide(state, idx, diff) {
     diff = diff || 'normal';
-    const la = root.Holdem.legalActions(state);
+    const eng = root.HoldemN || root.Holdem;
+    const la = eng.legalActions(state);
     const s = strength(state, idx);
     const pot = state.players[0].committed + state.players[1].committed;
     const toCall = la.toCall;

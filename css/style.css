@@ -42,26 +42,46 @@ button { font-family: inherit; cursor: pointer; }
 .credit { color: #5c6a63; font-size: 12px; }
 
 /* ---------- 테이블 ---------- */
-.table {
-  height: 100%; position: relative; display: flex; flex-direction: column;
-  align-items: center; justify-content: space-between; padding: 12px;
-  background: radial-gradient(ellipse 120% 90% at 50% 42%, var(--felt) 0%, var(--felt2) 70%, #0a2c22 100%);
-}
+.table { height: 100%; position: relative; display: flex; flex-direction: column; align-items: center;
+  padding: 8px; background: radial-gradient(ellipse at 50% 35%, #1b2622, #0b110e 75%); overflow: hidden; }
 .leave-btn { position: absolute; top: 10px; right: 12px; z-index: 20; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.18); color: #fff; border-radius: 9px; padding: 6px 9px; font-size: 15px; }
 
-.seat { display: flex; flex-direction: column; align-items: center; gap: 7px; position: relative; }
-.seat.opp { padding-top: 6px; }
-.pinfo { display: flex; align-items: center; gap: 9px; background: rgba(0,0,0,.34); border: 1px solid rgba(232,176,74,.3); border-radius: 40px; padding: 5px 14px 5px 6px; position: relative; }
-.seat.me .pinfo { border-color: rgba(255,120,90,.5); }
-.pavatar { width: 38px; height: 38px; border-radius: 50%; background: #0c3a2d; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 20px; }
-.seat.me .pavatar { border-color: var(--tomato); }
-.pmeta { line-height: 1.15; }
-.pname { font-size: 13px; font-weight: 800; color: #fff; }
-.pstack { font-size: 15px; font-weight: 900; color: var(--gold); }
-.pstack::before { content: "🪙 "; font-size: 12px; }
-.dealer-btn { position: absolute; right: -8px; bottom: -6px; width: 22px; height: 22px; border-radius: 50%; background: #fff; color: #14181a; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,.4); }
+/* 타원 펠트 */
+.felt { position: relative; width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 0 6px; }
+.felt-inner { position: relative; width: min(96vw, 1040px); aspect-ratio: 1.55 / 1; max-height: 100%;
+  border-radius: 48% / 50%; background: radial-gradient(ellipse at 50% 42%, var(--felt) 0%, var(--felt2) 70%, #08291e 100%);
+  border: 9px solid #6b4427; box-shadow: 0 16px 44px rgba(0,0,0,.6), inset 0 0 70px rgba(0,0,0,.45), inset 0 0 0 3px rgba(255,255,255,.04); }
+@media (max-aspect-ratio: 1/1) { .felt-inner { aspect-ratio: 1.12 / 1; } }   /* 세로 화면: 더 둥근 테이블로 공간 채움 */
+.center-area { position: absolute; left: 50%; top: 40%; transform: translate(-50%,-50%); display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.pot-pill { background: rgba(0,0,0,.5); border: 1px solid var(--gold); color: #ffe9a8; font-weight: 900; font-size: clamp(13px,2.3vmin,19px); padding: 4px 16px; border-radius: 30px; white-space: nowrap; }
+.community { display: flex; gap: 5px; min-height: var(--card-h); }
+.community .pcard { width: var(--card-w); height: var(--card-h); }
+.community .slot { width: var(--card-w); height: var(--card-h); border-radius: 7px; border: 1.5px dashed rgba(255,255,255,.1); }
+.board-msg { min-height: 16px; font-size: 12px; font-weight: 800; color: #ffe9a8; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
 
-.hole { display: flex; gap: 5px; }
+/* 자리(절대배치, JS가 좌표 설정) */
+.seats { position: absolute; inset: 0; }
+.seat { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
+.seat-cards { display: flex; gap: 2px; margin-bottom: -10px; z-index: 2; min-height: 1px; }
+.seat-cards .pcard { width: calc(var(--card-w) * .64); height: calc(var(--card-h) * .64); }
+.seat-info { display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,.6); border: 1px solid rgba(232,176,74,.35); border-radius: 13px; padding: 14px 9px 5px; position: relative; min-width: 72px; }
+.seat-av { position: absolute; top: -17px; width: 34px; height: 34px; border-radius: 50%; background: #0c3a2d; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+.seat-name { font-size: 11px; font-weight: 800; color: #fff; max-width: 82px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seat-stack { font-size: 13px; font-weight: 900; color: var(--gold); }
+.seat-stack::before { content: "🪙"; font-size: 10px; margin-right: 2px; }
+.seat.me .seat-info { border-color: var(--tomato); }
+.seat.me .seat-av { border-color: var(--tomato); }
+.seat.folded { opacity: .4; }
+.seat.active .seat-info { box-shadow: 0 0 0 2px var(--gold), 0 0 18px rgba(232,176,74,.65); }
+.seat.winner .seat-info { box-shadow: 0 0 0 2px #38d96a, 0 0 24px rgba(56,217,106,.85); }
+.seat-dealer { position: absolute; right: -9px; top: 8px; width: 19px; height: 19px; border-radius: 50%; background: #fff; color: #14181a; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,.5); z-index: 3; }
+.seat-bet { position: absolute; background: rgba(0,0,0,.6); border: 1px solid var(--gold); color: #ffe9a8; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 16px; white-space: nowrap; z-index: 4; }
+.seat-bet::before { content: "🪙"; margin-right: 2px; font-size: 9px; }
+
+/* 히어로(내) 카드 — 하단 중앙 크게 */
+.hero-cards { position: absolute; bottom: 76px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 8; }
+.hero-cards .pcard { width: calc(var(--card-w) * 1.2); height: calc(var(--card-h) * 1.2); }
+.hero-cards.seven .pcard { width: calc(var(--card-w) * .9); height: calc(var(--card-h) * .9); }
 .pcard { width: var(--card-w); height: var(--card-h); border-radius: 7px; overflow: hidden; box-shadow: 0 3px 8px rgba(0,0,0,.45); background: #fff; }
 .pcard img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .pcard.back { background: #1b3a8a; }
@@ -82,7 +102,7 @@ button { font-family: inherit; cursor: pointer; }
 .bet-chip { transition: transform .35s ease, opacity .3s; }
 
 /* 덱(딜러 패) — 카드가 여기서 날아감 */
-.deck { position: absolute; top: 27%; left: 50%; transform: translate(-50%, -50%); width: var(--card-w); height: var(--card-h); z-index: 2; border-radius: 7px;
+.deck { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); width: var(--card-w); height: var(--card-h); z-index: 2; border-radius: 7px;
   box-shadow: 0 4px 10px rgba(0,0,0,.5), 3px 3px 0 -1px #14306e, 6px 6px 0 -2px #0f255a; }
 .deck img { width: 100%; height: 100%; object-fit: cover; border-radius: 7px; display: block; }
 /* 날아가는 카드(딜) */
@@ -92,21 +112,8 @@ button { font-family: inherit; cursor: pointer; }
 .chip-fly { position: fixed; z-index: 48; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
   font-size: 22px; pointer-events: none; will-change: transform; filter: drop-shadow(0 2px 4px rgba(0,0,0,.55)); }
 
-.board-area { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.pot { background: rgba(0,0,0,.4); border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 16px; padding: 5px 18px; border-radius: 30px; }
-.community { display: flex; gap: 6px; min-height: var(--card-h); }
-.community .pcard { width: calc(var(--card-w) * 1.06); height: calc(var(--card-h) * 1.06); }
-.community .slot { width: calc(var(--card-w) * 1.06); height: calc(var(--card-h) * 1.06); border-radius: 7px; border: 1.5px dashed rgba(255,255,255,.14); }
-.board-msg { min-height: 20px; font-size: 14px; font-weight: 800; color: #ffe9a8; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
-
-.bet-chip { background: rgba(0,0,0,.5); border: 1px solid var(--gold); color: #ffe9a8; font-weight: 800; font-size: 13px; padding: 3px 11px; border-radius: 20px; }
-
-/* ---- 세븐포커 모드: 공용패 없음, 플레이어마다 카드 줄(최대 7장) ---- */
-.table.seven { --card-w: clamp(38px, 6.6vmin, 58px); }
-.table.seven #community, .table.seven .board-msg { display: none; }
-.table.seven #deck { top: 50%; }
-.table.seven .hole { gap: 3px; flex-wrap: nowrap; }
-.table.seven .board-area { min-height: 30px; }
+/* ---- 세븐포커 모드: 공용패 없음(자리마다 최대 7장) ---- */
+.table.seven .community, .table.seven .pot-pill { display: none; }
 .pcard.hidden-card { filter: brightness(.82) saturate(.9); }
 .pcard.hidden-card .back { box-shadow: inset 0 0 0 2px rgba(232,176,74,.35); }
 
@@ -127,8 +134,6 @@ button { font-family: inherit; cursor: pointer; }
 .raise-confirm .act { flex: 1; min-width: 0; padding: 11px; font-size: 14px; }
 
 /* 강조: 내 차례 */
-.seat.active .pinfo { box-shadow: 0 0 0 2px var(--gold), 0 0 16px rgba(232,176,74,.5); }
-.win-glow .pinfo { box-shadow: 0 0 0 2px #38d96a, 0 0 22px rgba(56,217,106,.7); }
 
 /* 모달 */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,.62); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
@@ -140,11 +145,14 @@ button { font-family: inherit; cursor: pointer; }
 .modal-actions button { flex: 1; border: none; border-radius: 11px; padding: 13px; font-size: 15px; font-weight: 800; }
 .btn-again { background: var(--tomato); color: #fff; }
 .btn-home { background: #39443e; color: #e7f3ee; }
-.show-hands { display: flex; justify-content: center; gap: 16px; margin: 12px 0; }
-.sh { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.sh .cards { display: flex; gap: 3px; }
-.sh .cards .pcard { width: 38px; height: 53px; }
-.sh .cat { font-size: 12px; font-weight: 800; color: #ffe9a8; }
+.show-hands { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 14px; margin: 12px 0; max-height: 40vh; overflow-y: auto; }
+.sh { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 5px 7px; border-radius: 9px; }
+.sh.win { background: rgba(56,217,106,.14); box-shadow: 0 0 0 1px rgba(56,217,106,.5); }
+.sh .nm { font-size: 11px; font-weight: 800; color: #cfe6db; }
+.sh .cards { display: flex; gap: 2px; }
+.sh .cards .pcard { width: 30px; height: 42px; border-radius: 4px; overflow: hidden; }
+.sh .cards .pcard img { width: 100%; height: 100%; object-fit: cover; }
+.sh .cat { font-size: 11px; font-weight: 800; color: #ffe9a8; }
 
 /* 토스트 */
 .toasts { position: fixed; top: 14%; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 60; pointer-events: none; }
