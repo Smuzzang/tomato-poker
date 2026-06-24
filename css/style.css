@@ -50,13 +50,8 @@ button { font-family: inherit; cursor: pointer; }
 .felt { position: relative; width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 0 6px; }
 .felt-inner { position: relative; width: min(96vw, 1040px); aspect-ratio: 1.55 / 1; max-height: 96%;
   border-radius: 48% / 50%; background: radial-gradient(ellipse at 50% 42%, var(--felt) 0%, var(--felt2) 70%, #08291e 100%);
-  border: 9px solid #6b4427; box-shadow: 0 16px 44px rgba(0,0,0,.6), inset 0 0 70px rgba(0,0,0,.45), inset 0 0 0 3px rgba(255,255,255,.04);
-  transform: perspective(1300px) rotateX(15deg); transform-style: preserve-3d; }
+  border: 9px solid #6b4427; box-shadow: 0 16px 44px rgba(0,0,0,.6), inset 0 0 70px rgba(0,0,0,.45), inset 0 0 0 3px rgba(255,255,255,.04); }
 @media (max-aspect-ratio: 1/1) { .felt-inner { aspect-ratio: 1.12 / 1; } }   /* 세로 화면: 더 둥근 테이블로 공간 채움 */
-/* 자리·중앙 내용은 시점을 향하도록 역기울임(테이블만 기울어 보이게) */
-.seat, .center-area { transform-origin: center; }
-.felt-inner .seat { transform: translate(-50%, -50%) rotateX(-15deg); }
-.felt-inner .center-area { transform: translate(-50%, -50%) rotateX(-15deg); }
 .center-area { position: absolute; left: 50%; top: 40%; transform: translate(-50%,-50%); display: flex; flex-direction: column; align-items: center; gap: 7px; }
 .pot-pill { background: rgba(0,0,0,.5); border: 1px solid var(--gold); color: #ffe9a8; font-weight: 900; font-size: clamp(13px,2.3vmin,19px); padding: 4px 16px; border-radius: 30px; white-space: nowrap; }
 .community { display: flex; gap: 5px; min-height: var(--card-h); }
