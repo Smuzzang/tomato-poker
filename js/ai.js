@@ -104,5 +104,50 @@
     return { type: 'fold' };
   }
 
-  root.PokerAI = { decide, strength, preflop, postflop };
+  /* ---- 세븐포커 ---- */
+  function catStrength(cat) {
+    return [0.16, 0.5, 0.6, 0.74, 0.82, 0.86, 0.93, 0.98, 0.99][cat];
+  }
+  function sevenStrength(cards) {
+    const cs = cards.map(c => ({ r: c.r, s: c.s }));
+    if (cs.length >= 5) {
+      const e = Eval.evalBest(cs);
+      let s = catStrength(e.cat);
+      if (e.cat <= 1) s += (e.tb[0] - 2) / 60;          // 페어 높을수록 약간 가산
+      return Math.min(1, s);
+    }
+    const cnt = {}; cs.forEach(c => cnt[c.r] = (cnt[c.r] || 0) + 1);
+    const g = Object.values(cnt).sort((a, b) => b - a);
+    const hi = Math.max(...cs.map(c => c.r));
+    if (g[0] >= 3) return 0.72;
+    if (g[0] === 2) return 0.46 + (hi - 2) / 50;
+    return 0.16 + (hi - 2) / 45;
+  }
+
+  function decideSeven(state, idx, diff) {
+    diff = diff || 'normal';
+    const la = root.Seven.legalActions(state);
+    const me = state.players[idx];
+    const s = sevenStrength(me.cards);
+    const pot = state.players[0].committed + state.players[1].committed;
+    const toCall = la.toCall, rnd = Math.random();
+    const aggro = diff === 'hard' ? 1.25 : diff === 'easy' ? 0.7 : 1;
+    const bluff = diff === 'hard' ? 0.14 : diff === 'easy' ? 0.03 : 0.07;
+    const raiseTo = () => {
+      const t = state.currentBet + Math.max(state.bet, Math.round((pot + toCall) * (0.5 + rnd * 0.4)));
+      return Math.max(la.minRaiseTo, Math.min(t, la.maxRaiseTo));
+    };
+    if (toCall === 0) {
+      if (la.canRaise && (s > 0.7 || (s > 0.45 * aggro && rnd < 0.42 * aggro) || rnd < bluff)) return { type: 'raise', amount: raiseTo() };
+      return { type: 'check' };
+    }
+    const potOdds = toCall / (pot + toCall);
+    if (s > 0.8 && la.canRaise && rnd < 0.55 * aggro) return { type: 'raise', amount: raiseTo() };
+    if (s >= potOdds + 0.05 && la.canCall) return { type: 'call' };
+    if (la.canCall && rnd < bluff) return { type: 'call' };
+    if (la.canCheck) return { type: 'check' };
+    return { type: 'fold' };
+  }
+
+  root.PokerAI = { decide, strength, preflop, postflop, decideSeven, sevenStrength };
 })(typeof window !== 'undefined' ? window : globalThis);

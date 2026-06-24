@@ -98,6 +98,15 @@ button { font-family: inherit; cursor: pointer; }
 
 .bet-chip { background: rgba(0,0,0,.5); border: 1px solid var(--gold); color: #ffe9a8; font-weight: 800; font-size: 13px; padding: 3px 11px; border-radius: 20px; }
 
+/* ---- 세븐포커 모드: 공용패 없음, 플레이어마다 카드 줄(최대 7장) ---- */
+.table.seven { --card-w: clamp(38px, 6.6vmin, 58px); }
+.table.seven #community, .table.seven .board-msg { display: none; }
+.table.seven #deck { top: 50%; }
+.table.seven .hole { gap: 3px; flex-wrap: nowrap; }
+.table.seven .board-area { min-height: 30px; }
+.pcard.hidden-card { filter: brightness(.82) saturate(.9); }
+.pcard.hidden-card .back { box-shadow: inset 0 0 0 2px rgba(232,176,74,.35); }
+
 /* 액션 */
 .actions { display: flex; gap: 10px; align-items: flex-end; justify-content: center; padding-bottom: 6px; position: relative; min-height: 56px; }
 .act { border: none; border-radius: 12px; padding: 14px 22px; font-size: 16px; font-weight: 800; color: #fff; min-width: 92px; box-shadow: 0 4px 0 rgba(0,0,0,.25); }

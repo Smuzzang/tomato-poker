@@ -18,7 +18,6 @@
     $('#nickname').value = localStorage.getItem('tpoker_nick') || '';
     $('#gameSeg').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
-      if (b.dataset.game === 'seven') { toast('세븐포커는 준비 중이에요', 'red'); return; }
       $('#gameSeg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
       b.classList.add('on'); App.game = b.dataset.game;
     });
@@ -47,21 +46,30 @@
   /* ---------------- 게임 시작 ---------------- */
   function startSingle() {
     App.mode = 'single'; App.nick = nickname();
+    App.engine = App.game === 'seven' ? window.Seven : window.Holdem;
+    App.aiDecide = App.game === 'seven' ? (s, i, d) => AI.decideSeven(s, i, d) : (s, i, d) => AI.decide(s, i, d);
     App.stacks = [START_STACK, START_STACK]; App.button = Math.random() < 0.5 ? 0 : 1; App.handNo = 0;
     $('#myName').textContent = App.nick;
+    document.querySelector('#table').classList.toggle('seven', App.game === 'seven');
     show('table');
     newHand();
   }
 
   function newHand() {
     App.handNo++;
-    App.revealOpp = false; App.busy = false;
-    App.state = Holdem.newHand({ sb: SB, bb: BB, stacks: App.stacks.slice(), button: App.button, seed: (Math.random() * 4294967295) >>> 0 });
+    App.revealOpp = false; App.busy = false; App._commShown = 0;
+    if (App.game === 'seven')
+      App.state = App.engine.newHand({ ante: 5, bet: BB, stacks: App.stacks.slice(), first: App.button, seed: (Math.random() * 4294967295) >>> 0 });
+    else
+      App.state = App.engine.newHand({ sb: SB, bb: BB, stacks: App.stacks.slice(), button: App.button, seed: (Math.random() * 4294967295) >>> 0 });
     $('#modal').hidden = true;
     $('#boardMsg').textContent = '';
+    // 카드 영역 완전 초기화(게임 전환·새 핸드)
+    ['#myHole', '#oppHole', '#community'].forEach(sel => { const b = $(sel); b.innerHTML = ''; b.dataset.codes = ''; b.dataset.n = '0'; });
+    App._commShown = 0;
     render();
     SFXdeal();
-    setTimeout(drive, 1450); // 카드 딜(덱→손패) 연출이 끝난 뒤 베팅 시작
+    setTimeout(drive, 1450); // 카드 딜(덱→자리) 연출이 끝난 뒤 베팅 시작
   }
 
   /* ---------------- 진행(턴 분배) ---------------- */
@@ -76,8 +84,8 @@
       setTimeout(() => {
         if (!App.state || App.state.phase !== 'betting' || App.state.toAct !== 1) return;
         const before = streetOf(App.state);
-        const a = AI.decide(App.state, 1, App.diff);
-        Holdem.act(App.state, a);
+        const a = App.aiDecide(App.state, 1, App.diff);
+        App.engine.act(App.state, a);
         announceAI(a);
         App.busy = false;
         afterStreetFx(before);
@@ -89,33 +97,36 @@
     }
   }
 
-  function streetOf(s) { return s.street + '/' + s.community.length; }
+  function streetOf(s) { return App.game === 'seven' ? ('s' + s.street) : (s.street + '/' + s.community.length); }
   function afterStreetFx(before) {
     const s = App.state; if (!s) return;
     if (s.phase === 'done') return;
     if (streetOf(s) !== before) {
-      const names = { flop: '플랍', turn: '턴', river: '리버' };
-      if (names[s.street]) { $('#boardMsg').textContent = names[s.street]; SFXdeal(); }
-      App._streetPause = 1150;  // 공용패가 덱에서 날아와 뒤집히는 동안 멈춤
+      const names = App.game === 'seven'
+        ? { 4: '4번째 카드', 5: '5번째 카드', 6: '6번째 카드', 7: '마지막 히든' }
+        : { flop: '플랍', turn: '턴', river: '리버' };
+      const msg = App.game === 'seven' ? names[s.street] : names[s.street];
+      if (msg) { $('#boardMsg').textContent = msg; SFXdeal(); }
+      App._streetPause = 1150;  // 새 카드가 덱에서 날아와 뒤집히는 동안 멈춤
     }
   }
 
   /* ---------------- 내 액션 ---------------- */
   function callAction() {
-    const la = Holdem.legalActions(App.state);
+    const la = App.engine.legalActions(App.state);
     return la.canCheck ? { type: 'check' } : { type: 'call' };
   }
   function myAct(a) {
     if (App.busy || !App.state || App.state.phase !== 'betting' || App.state.toAct !== 0) return;
     $('#raisePanel').hidden = true;
     const before = streetOf(App.state);
-    const r = Holdem.act(App.state, a);
+    const r = App.engine.act(App.state, a);
     if (r && r.ok === false) { toast(r.error, 'red'); return; }
     afterStreetFx(before);
     drive();
   }
   function openRaise() {
-    const la = Holdem.legalActions(App.state);
+    const la = App.engine.legalActions(App.state);
     if (!la.canRaise) { toast('레이즈할 수 없어요', 'red'); return; }
     const sl = $('#raiseSlider');
     sl.min = la.minRaiseTo; sl.max = la.maxRaiseTo; sl.step = SB; sl.value = Math.min(la.maxRaiseTo, la.minRaiseTo);
@@ -123,7 +134,7 @@
     $('#raisePanel').hidden = false;
   }
   function quickRaise(q) {
-    const la = Holdem.legalActions(App.state); const s = App.state;
+    const la = App.engine.legalActions(App.state); const s = App.state;
     const pot = s.players[0].committed + s.players[1].committed;
     let to;
     if (q === 'allin') to = la.maxRaiseTo;
@@ -134,7 +145,7 @@
   }
   function doRaise() {
     const to = Number($('#raiseSlider').value);
-    const la = Holdem.legalActions(App.state);
+    const la = App.engine.legalActions(App.state);
     $('#raisePanel').hidden = true;
     myAct({ type: to >= la.maxRaiseTo ? 'allin' : 'raise', amount: to });
   }
@@ -161,8 +172,8 @@
     let handsHtml = '';
     if (r.showdown && r.hands) {
       const mk = (idx) => {
-        const p = s.players[idx];
-        const cards = p.hole.map(c => `<div class="pcard"><img src="${Cards.imgPath(c)}"></div>`).join('');
+        const best = r.hands[idx].best || [];   // 베스트 5장(두 게임 공통)
+        const cards = best.map(c => `<div class="pcard"><img src="${Cards.imgPath(c)}"></div>`).join('');
         return `<div class="sh"><div class="cards">${cards}</div><div class="cat">${Eval.catName(r.hands[idx].cat)}</div></div>`;
       };
       handsHtml = `<div class="show-hands">${mk(0)}${mk(1)}</div>`;
@@ -198,11 +209,17 @@
     const s = App.state; if (!s) return;
     $('#myStack').textContent = s.players[0].stack;
     $('#oppStack').textContent = s.players[1].stack;
-    $('#myDealer').hidden = s.button !== 0;
-    $('#oppDealer').hidden = s.button !== 1;
-    renderHole($('#oppHole'), s.players[1].hole, App.revealOpp, s.players[1].folded, 0);   // 딜: 상대 먼저
-    renderHole($('#myHole'), s.players[0].hole, true, s.players[0].folded, 150);            // 한 박자 뒤 내 패
-    renderCommunity(s.community);
+    if (App.game === 'seven') {
+      $('#myDealer').hidden = true; $('#oppDealer').hidden = true;
+      renderSevenHand($('#oppHole'), s.players[1].cards, false, App.revealOpp, 0);
+      renderSevenHand($('#myHole'), s.players[0].cards, true, false, 150);
+    } else {
+      $('#myDealer').hidden = s.button !== 0;
+      $('#oppDealer').hidden = s.button !== 1;
+      renderHole($('#oppHole'), s.players[1].hole, App.revealOpp, s.players[1].folded, 0);   // 딜: 상대 먼저
+      renderHole($('#myHole'), s.players[0].hole, true, s.players[0].folded, 150);            // 한 박자 뒤 내 패
+      renderCommunity(s.community);
+    }
     const pot = s.players[0].committed + s.players[1].committed;
     $('#pot').textContent = '팟 ' + pot;
     showBet($('#myBet'), s.players[0].bet);
@@ -293,11 +310,32 @@
     }
     App._commShown = comm.length;
   }
+
+  /* 세븐포커: 플레이어의 카드 줄(오픈/히든). 새 카드만 덱에서 날아옴. 쇼다운 시 히든 공개 */
+  function renderSevenHand(box, cards, isMe, revealAll, base) {
+    let shown = Number(box.dataset.n || 0);
+    if (cards.length < shown) { box.innerHTML = ''; box.dataset.n = '0'; shown = 0; }
+    for (let i = shown; i < cards.length; i++) {
+      const c = cards[i];
+      const faceUp = isMe ? true : (c.up || revealAll);
+      const el = flipCardEl({ r: c.r, s: c.s });
+      if (!c.up && !isMe) el.classList.add('hidden-card');   // 상대 히든 표시(살짝 어둡게)
+      box.appendChild(el); el.style.opacity = '0';
+      flyFromDeck(el, { reveal: faceUp, delay: base + (i - shown) * 200 });
+    }
+    box.dataset.n = String(cards.length);
+    // 이미 놓인 카드의 공개 상태 변화(쇼다운: 상대 히든 → 공개)
+    [...box.children].forEach((el, i) => {
+      const c = cards[i]; if (!c) return;
+      const want = isMe ? true : (c.up || revealAll);
+      if (want && el.style.opacity === '1' && !el.classList.contains('up')) { el.classList.remove('hidden-card'); setTimeout(() => el.classList.add('up'), i * 90); }
+    });
+  }
   function showBet(el, amt) { if (amt > 0) { el.hidden = false; el.textContent = amt; } else el.hidden = true; }
 
   /* ---------------- 액션 컨트롤 ---------------- */
   function showActions() {
-    const la = Holdem.legalActions(App.state); if (!la) { hideActions(); return; }
+    const la = App.engine.legalActions(App.state); if (!la) { hideActions(); return; }
     $('#actions').hidden = false;
     $('#btnFold').disabled = false;
     $('#btnFold').style.display = la.canCheck ? 'none' : ''; // 체크 가능하면 폴드 숨김(공짜인데 폴드 방지)
