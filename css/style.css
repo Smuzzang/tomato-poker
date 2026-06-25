@@ -41,8 +41,12 @@ button { font-family: inherit; cursor: pointer; }
 .help { background: #171d1a; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 12px; font-size: 12.5px; line-height: 1.7; color: #c5d0ca; }
 .credit { color: #5c6a63; font-size: 12px; }
 
-/* ---------- 테이블 (맞고식 평평한 도포) ---------- */
-.table { height: 100%; position: relative; display: flex; flex-direction: column; align-items: center; padding: 8px; overflow: hidden;
+/* ---------- 테이블 (비율 고정 16:9 스테이지 + 레터박스) ---------- */
+.table { height: 100%; width: 100%; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #05080a; }
+/* 기준 캔버스: 16:9 비율 유지하며 뷰포트에 맞춰 균일 스케일. 남는 영역은 레터박스(어두운 .table 배경) */
+.stage { position: relative; display: flex; flex-direction: column; align-items: center; overflow: hidden; padding: 8px;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
   background-color: #143b46;
   background-image:
     radial-gradient(ellipse 78% 66% at 50% 44%, rgba(86,170,188,.30) 0%, rgba(13,38,48,0) 54%, rgba(3,13,18,.78) 100%),
@@ -51,6 +55,15 @@ button { font-family: inherit; cursor: pointer; }
   background-repeat: no-repeat, repeat;
   background-blend-mode: soft-light, multiply; }
 .leave-btn { position: absolute; top: 10px; right: 12px; z-index: 20; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.18); color: #fff; border-radius: 9px; padding: 6px 9px; font-size: 15px; }
+
+/* 모바일 세로: 가로로 돌려달라는 안내(테이블 전체 덮음) */
+.rotate-hint { display: none; }
+@media (orientation: portrait) and (max-width: 920px) {
+  .rotate-hint { display: flex; position: absolute; inset: 0; z-index: 95; align-items: center; justify-content: center; background: rgba(5,8,10,.96); }
+}
+.rh-box { text-align: center; color: #ffe9a8; font-weight: 800; font-size: 17px; line-height: 1.7; padding: 20px; }
+.rh-ic { font-size: 56px; display: inline-block; animation: rhspin 2.4s ease-in-out infinite; }
+@keyframes rhspin { 0%, 60% { transform: rotate(0); } 80%, 100% { transform: rotate(-90deg); } }
 
 /* 평평한 도포(전체 영역) — 테두리/타원 없음, 자리 배치용 컨테이너 */
 .felt { position: relative; width: 100%; flex: 1; min-height: 0; }
