@@ -37,7 +37,7 @@
     $('#raisePanel').querySelectorAll('.rq').forEach(b => b.addEventListener('click', () => quickRaise(b.dataset.q)));
     $('#rankTab').addEventListener('click', toggleRankGuide);
     renderRankGuide();
-    window.addEventListener('resize', () => { if (!$('#table').hidden && App.state) positionSeats(App.nSeats); });
+    window.addEventListener('resize', () => { if (!$('#table').hidden && App.state) { positionSeats(App.nSeats); placeHeroInfo(); } });
   }
   function segHandler(sel, key, cb) {
     $(sel).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $(sel).querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); cb(b.dataset[key]); });
@@ -86,7 +86,7 @@
     for (let i = 0; i < n; i++) {
       const seat = document.createElement('div'); seat.className = 'seat' + (i === App.mySeat ? ' me' : ''); seat.dataset.i = i;
       seat.innerHTML = `<div class="seat-cards"></div>
-        <div class="seat-info"><div class="seat-av">🙂</div><div class="seat-name">P</div><div class="seat-stack">0</div><div class="seat-hand" hidden></div><span class="seat-dealer" hidden>D</span></div>
+        <div class="seat-info"><div class="seat-av">🙂</div><div class="seat-meta"><div class="seat-name">P</div><div class="seat-stack">0</div><div class="seat-hand" hidden></div></div><span class="seat-dealer" hidden>D</span></div>
         <div class="seat-bet" hidden></div>`;
       seats.appendChild(seat);
     }
@@ -105,9 +105,18 @@
   function positionSeats(n) {
     const seats = $('#seats'); const cx = 50, cy = 48, rx = 45, ry = 41;
     for (let i = 0; i < n; i++) {
+      const seat = seats.children[i]; if (!seat) continue;
+      if (i === App.mySeat) {
+        // 내 상태창은 큰 카드 바로 위(가운데), 카드와 안 겹치게 바텀 기준 앵커
+        seat.style.left = '50%'; seat.style.top = 'auto';
+        seat.style.bottom = 'calc(76px + (var(--card-h) * 1.2) + 10px)';
+        const bet = seat.querySelector('.seat-bet');
+        bet.style.left = '50%'; bet.style.top = '0'; bet.style.transform = 'translate(-50%,-160%)';
+        continue;
+      }
       const ang = seatDeg(i, n) * Math.PI / 180;
       const x = cx + rx * Math.cos(ang), y = cy + ry * Math.sin(ang);
-      const seat = seats.children[i]; if (!seat) continue;
+      seat.style.bottom = 'auto';
       seat.style.left = x + '%'; seat.style.top = y + '%';
       // 베팅 칩: 자리→중앙 방향으로 살짝
       const dirx = (cx - x), diry = (cy - y); const len = Math.hypot(dirx, diry) || 1;
@@ -115,6 +124,17 @@
       bet.style.left = '50%'; bet.style.top = '0';
       bet.style.transform = `translate(-50%,-50%) translate(${(dirx / len) * 46}px, ${(diry / len) * 46}px)`;
     }
+    placeHeroInfo();
+  }
+  // 히어로 상태창을 실제 내 카드 바로 위(8px)에 정확히 배치 (카드 폭에 맞춰 가운데)
+  function placeHeroInfo() {
+    const seat = $('#seats').children[App.mySeat], cards = $('#heroCards');
+    if (!seat || !cards) return;
+    const cr = cards.getBoundingClientRect();
+    if (!cr.height) return;
+    const cb = (seat.offsetParent || $('#seats')).getBoundingClientRect();   // bottom 기준 컨테이닝 블록(#seats)
+    seat.style.left = '50%'; seat.style.top = 'auto';
+    seat.style.bottom = Math.round(cb.bottom - cr.top + 8) + 'px';   // 카드 윗변에서 8px 위
   }
 
   /* ---------------- 진행 ---------------- */
@@ -235,6 +255,7 @@
     $('#potAmt').textContent = fmt(pot);
     if (App.game !== 'seven') renderCommunity(s.community);
     for (let i = 0; i < s.players.length; i++) renderSeat(i, s, dealAnim);
+    placeHeroInfo();
   }
   // 현재 알고 있는 카드로 만들어진 족보 이름. (히어로=항상, 상대=쇼다운 시. 세븐은 상대 오픈카드도 참고)
   function handLabel(cards) {
