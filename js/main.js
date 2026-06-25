@@ -21,7 +21,7 @@
   /* ---------------- 로비 ---------------- */
   function initLobby() {
     $('#nickname').value = localStorage.getItem('tpoker_nick') || '';
-    segHandler('#gameSeg', 'game', v => { App.game = v; $('#seatSeg').style.opacity = v === 'seven' ? '.4' : '1'; });
+    segHandler('#gameSeg', 'game', v => { App.game = v; });
     segHandler('#seatSeg', 'seats', v => App.seats = Number(v));
     segHandler('#diffSeg', 'diff', v => App.diff = v);
     $('#btnSingle').addEventListener('click', startSingle);
@@ -48,7 +48,7 @@
   /* ---------------- 게임 시작 ---------------- */
   function startSingle() {
     App.mode = 'single'; App.nick = nickname(); App.mySeat = 0;
-    if (App.game === 'seven') { App.engine = window.Seven; App.aiDecide = (s, i, d) => AI.decideSeven(s, i, d); App.nSeats = 2; }
+    if (App.game === 'seven') { App.engine = window.Seven; App.aiDecide = (s, i, d) => AI.decideSeven(s, i, d); App.nSeats = App.seats; }
     else { App.engine = window.HoldemN; App.aiDecide = (s, i, d) => AI.decide(s, i, d); App.nSeats = App.seats; }
     App.stacks = new Array(App.nSeats).fill(START_STACK);
     App.button = Math.floor(Math.random() * App.nSeats);
@@ -86,7 +86,7 @@
     for (let i = 0; i < n; i++) {
       const seat = document.createElement('div'); seat.className = 'seat' + (i === App.mySeat ? ' me' : ''); seat.dataset.i = i;
       seat.innerHTML = `<div class="seat-cards"></div>
-        <div class="seat-info"><div class="seat-av">🙂</div><div class="seat-name">P</div><div class="seat-stack">0</div><span class="seat-dealer" hidden>D</span></div>
+        <div class="seat-info"><div class="seat-av">🙂</div><div class="seat-name">P</div><div class="seat-stack">0</div><div class="seat-hand" hidden></div><span class="seat-dealer" hidden>D</span></div>
         <div class="seat-bet" hidden></div>`;
       seats.appendChild(seat);
     }
@@ -236,12 +236,40 @@
     if (App.game !== 'seven') renderCommunity(s.community);
     for (let i = 0; i < s.players.length; i++) renderSeat(i, s, dealAnim);
   }
+  // 현재 알고 있는 카드로 만들어진 족보 이름. (히어로=항상, 상대=쇼다운 시. 세븐은 상대 오픈카드도 참고)
+  function handLabel(cards) {
+    if (!cards || cards.length < 2) return '';
+    const cs = cards.map(c => ({ r: c.r, s: c.s }));
+    if (cs.length >= 5) { try { return Eval.catName(Eval.evalBest(cs).cat); } catch (_) {} }
+    const cnt = {}; cs.forEach(c => cnt[c.r] = (cnt[c.r] || 0) + 1);
+    const g = Object.values(cnt).sort((a, b) => b - a);
+    if (g[0] === 4) return Eval.catName(7);
+    if (g[0] === 3) return Eval.catName(3);
+    if (g[0] === 2 && g[1] === 2) return Eval.catName(2);
+    if (g[0] === 2) return Eval.catName(1);
+    return Eval.catName(0);
+  }
+  function knownCards(i, s) {
+    const p = s.players[i]; if (p.folded) return [];
+    const isMe = i === App.mySeat, reveal = isMe || App.revealOpp;
+    if (App.game === 'seven') return reveal ? p.cards : p.cards.filter(c => c.up);
+    const comm = s.community || [];
+    return reveal ? [...(p.hole || []), ...comm] : [];
+  }
+
   function renderSeat(i, s, dealAnim) {
     const seat = $('#seats').children[i]; if (!seat) return;
     const p = s.players[i], isMe = i === App.mySeat;
     seat.querySelector('.seat-name').textContent = App.names[i] || ('P' + i);
     seat.querySelector('.seat-av').textContent = App.avatars[i] || '🙂';
     seat.querySelector('.seat-stack').textContent = fmt(p.stack);
+    // 현재 족보 라벨
+    const handEl = seat.querySelector('.seat-hand');
+    const known = knownCards(i, s);
+    const lbl = known.length >= 2 ? handLabel(known) : '';
+    const seenOnly = App.game === 'seven' && !isMe && !App.revealOpp && lbl;  // 상대 오픈카드 기준
+    if (lbl) { handEl.hidden = false; handEl.textContent = lbl; handEl.classList.toggle('seen', !!seenOnly); handEl.classList.toggle('mine', isMe); }
+    else handEl.hidden = true;
     seat.classList.toggle('folded', p.folded);
     seat.classList.toggle('active', s.phase === 'betting' && s.toAct === i);
     seat.querySelector('.seat-dealer').hidden = s.button !== i;

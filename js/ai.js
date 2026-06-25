@@ -74,7 +74,7 @@
     const eng = root.HoldemN || root.Holdem;
     const la = eng.legalActions(state);
     const s = strength(state, idx);
-    const pot = state.players[0].committed + state.players[1].committed;
+    const pot = state.players.reduce((a, p) => a + p.committed, 0);
     const toCall = la.toCall;
     const rnd = Math.random();
     const aggro = diff === 'hard' ? 1.25 : diff === 'easy' ? 0.7 : 1;
@@ -130,7 +130,7 @@
     const la = root.Seven.legalActions(state);
     const me = state.players[idx];
     const s = sevenStrength(me.cards);
-    const pot = state.players[0].committed + state.players[1].committed;
+    const pot = state.players.reduce((a, p) => a + p.committed, 0);
     const toCall = la.toCall, rnd = Math.random();
     const aggro = diff === 'hard' ? 1.25 : diff === 'easy' ? 0.7 : 1;
     const bluff = diff === 'hard' ? 0.14 : diff === 'easy' ? 0.03 : 0.07;

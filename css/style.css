@@ -72,6 +72,11 @@ button { font-family: inherit; cursor: pointer; }
 .seat-name { font-size: 11px; font-weight: 800; color: #fff; max-width: 82px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .seat-stack { font-size: 13px; font-weight: 900; color: var(--gold); }
 .seat-stack::before { content: "🪙"; font-size: 10px; margin-right: 2px; }
+/* 현재 만들어진 족보 라벨 (레퍼런스처럼 플레이어 마크 옆) */
+.seat-hand { margin-top: 3px; font-size: 10px; font-weight: 900; color: #1a1207; background: var(--gold); border-radius: 8px; padding: 1px 8px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.45); }
+.seat-hand.mine { background: linear-gradient(#ffe08a, #e8b04a); box-shadow: 0 0 0 1px rgba(255,255,255,.35), 0 1px 4px rgba(0,0,0,.5); }
+.seat-hand.seen { background: rgba(232,176,74,.22); color: #ffe9a8; font-weight: 700; font-style: italic; box-shadow: none; }
+.seat.me .seat-hand { font-size: 11px; }
 .seat.me .seat-info { border-color: var(--tomato); }
 .seat.me .seat-av { border-color: var(--tomato); }
 .seat.folded { opacity: .4; }
@@ -124,7 +129,7 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 22px; pointer-events: none; will-change: transform; filter: drop-shadow(0 2px 4px rgba(0,0,0,.55)); }
 
 /* ---- 세븐포커 모드: 공용패 없음(자리마다 최대 7장) ---- */
-.table.seven .community, .table.seven .pot-pill { display: none; }
+.table.seven .community { display: none; }   /* 세븐: 공용패 없음(자리마다 최대 7장), 팟은 표시 */
 .pcard.hidden-card { filter: brightness(.82) saturate(.9); }
 .pcard.hidden-card .back { box-shadow: inset 0 0 0 2px rgba(232,176,74,.35); }
 
