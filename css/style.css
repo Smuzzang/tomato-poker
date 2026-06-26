@@ -142,8 +142,8 @@ button { font-family: inherit; cursor: pointer; }
 .flyp { position: fixed; z-index: 45; border-radius: 7px; overflow: hidden; box-shadow: 0 8px 18px rgba(0,0,0,.55); will-change: transform; }
 .flyp img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* 날아가는 칩(베팅/팟 분배) */
-.chip-fly { position: fixed; z-index: 48; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
-  font-size: 22px; pointer-events: none; will-change: transform; filter: drop-shadow(0 2px 4px rgba(0,0,0,.55)); }
+.chip-fly { position: fixed; z-index: 48; width: 54px; height: 54px; display: flex; align-items: center; justify-content: center;
+  font-size: 46px; pointer-events: none; will-change: transform; filter: drop-shadow(0 3px 6px rgba(0,0,0,.6)); }
 
 /* ---- 세븐포커 모드: 공용패 없음(자리마다 최대 7장) ---- */
 .table.seven .community { display: none; }   /* 세븐: 공용패 없음(자리마다 최대 7장), 팟은 표시 */

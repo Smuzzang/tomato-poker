@@ -350,8 +350,8 @@
   }
   function flyOne(fromR, toR, jitter, dur) {
     const chip = document.createElement('div'); chip.className = 'chip-fly'; chip.textContent = '🪙';
-    chip.style.left = (fromR.left + fromR.width / 2 - 15 + (jitter ? Math.random() * 22 - 11 : 0)) + 'px';
-    chip.style.top = (fromR.top + fromR.height / 2 - 15) + 'px';
+    chip.style.left = (fromR.left + fromR.width / 2 - 27 + (jitter ? Math.random() * 22 - 11 : 0)) + 'px';
+    chip.style.top = (fromR.top + fromR.height / 2 - 27) + 'px';
     document.body.appendChild(chip);
     const dx = (toR.left + toR.width / 2) - (fromR.left + fromR.width / 2), dy = (toR.top + toR.height / 2) - (fromR.top + fromR.height / 2);
     let done = false; const land = () => { if (done) return; done = true; try { chip.remove(); } catch (_) {} };
