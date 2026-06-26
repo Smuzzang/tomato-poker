@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>토마토 포커 — Tomato Poker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23e23b2e'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="css/style.css?v=27" />
+<link rel="stylesheet" href="css/style.css?v=34" />
 </head>
 <body>
 <div id="app">
@@ -65,15 +65,19 @@
       <button class="rank-tab" id="rankTab">📖 족보 ▸</button>
       <div class="rank-body" id="rankBody" hidden></div>
     </div>
-    <div class="card-holder" aria-label="카드 홀더">
-      <div class="holder-box"><div class="deck" id="deck"><img src="cards/back.png" alt="덱" /></div></div>
-      <div class="holder-label">CARD HOLDER</div>
+    <div class="card-holder" aria-label="딜링 슈">
+      <div class="shoe">
+        <div class="shoe-deck" id="deck"><img src="cards/back.png" alt="덱" /></div>
+        <div class="shoe-frame"></div>
+        <div class="shoe-front"><span>TOMATO</span></div>
+      </div>
     </div>
     <div class="felt">
       <div class="felt-inner" id="feltInner">
         <div class="center-area">
-          <div class="pot-pill"><span class="pot-ic">🪙</span> <span id="potAmt">0</span></div>
           <div class="community" id="community"></div>
+          <div class="pot-chips" id="potChips"></div>
+          <div class="pot-pill">팟 <span id="potAmt">0원</span></div>
           <div class="board-msg" id="boardMsg"></div>
         </div>
         <div class="seats" id="seats"></div>
@@ -109,11 +113,11 @@
   <div id="toasts" class="toasts"></div>
 </div>
 
-<script src="js/cards.js?v=27"></script>
-<script src="js/evaluator.js?v=27"></script>
-<script src="js/holdemN.js?v=27"></script>
-<script src="js/seven.js?v=27"></script>
-<script src="js/ai.js?v=27"></script>
-<script src="js/main.js?v=27"></script>
+<script src="js/cards.js?v=34"></script>
+<script src="js/evaluator.js?v=34"></script>
+<script src="js/holdemN.js?v=34"></script>
+<script src="js/seven.js?v=34"></script>
+<script src="js/ai.js?v=34"></script>
+<script src="js/main.js?v=34"></script>
 </body>
 </html>

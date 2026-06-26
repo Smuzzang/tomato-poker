@@ -16,6 +16,7 @@
     stacks: [], button: 0, names: [], avatars: [], busy: false, revealOpp: false, _commShown: 0,
   };
   const fmt = n => (n || 0).toLocaleString('en-US');
+  const won = n => fmt(n) + '원';   // 가상머니 단위(원)
   const rndSeed = () => (Math.random() * 4294967295) >>> 0;
 
   /* ---------------- 로비 ---------------- */
@@ -33,7 +34,7 @@
     $('#btnRaise').addEventListener('click', openRaise);
     $('#btnRaiseCancel').addEventListener('click', () => $('#raisePanel').hidden = true);
     $('#btnRaiseDo').addEventListener('click', doRaise);
-    $('#raiseSlider').addEventListener('input', () => $('#raiseAmt').textContent = fmt(Number($('#raiseSlider').value)));
+    $('#raiseSlider').addEventListener('input', () => $('#raiseAmt').textContent = won(Number($('#raiseSlider').value)));
     $('#raisePanel').querySelectorAll('.rq').forEach(b => b.addEventListener('click', () => quickRaise(b.dataset.q)));
     $('#rankTab').addEventListener('click', toggleRankGuide);
     renderRankGuide();
@@ -189,14 +190,14 @@
     const la = App.engine.legalActions(App.state);
     if (!la.canRaise) { toast('레이즈할 수 없어요', 'red'); return; }
     const sl = $('#raiseSlider'); sl.min = la.minRaiseTo; sl.max = la.maxRaiseTo; sl.step = SB; sl.value = la.minRaiseTo;
-    $('#raiseAmt').textContent = fmt(Number(sl.value)); $('#raisePanel').hidden = false;
+    $('#raiseAmt').textContent = won(Number(sl.value)); $('#raisePanel').hidden = false;
   }
   function quickRaise(q) {
     const la = App.engine.legalActions(App.state), s = App.state;
     const pot = s.players.reduce((a, p) => a + p.committed, 0);
     let to = q === 'allin' ? la.maxRaiseTo : s.currentBet + Math.round(pot * Number(q));
     to = Math.round(to / SB) * SB; to = Math.max(la.minRaiseTo, Math.min(to, la.maxRaiseTo));
-    $('#raiseSlider').value = to; $('#raiseAmt').textContent = fmt(to);
+    $('#raiseSlider').value = to; $('#raiseAmt').textContent = won(to);
   }
   function doRaise() {
     const to = Number($('#raiseSlider').value), la = App.engine.legalActions(App.state);
@@ -210,7 +211,7 @@
     App.revealOpp = !!r.showdown;
     render();
     hideActions();
-    $('#potAmt').textContent = fmt(r.pot);
+    $('#potAmt').textContent = won(r.pot);
     App.stacks = r.stacks.slice();
     const winners = r.winners || [];
     winners.forEach(w => { const seat = $('#seats').children[w]; if (seat) seat.classList.add('winner'); });
@@ -237,8 +238,8 @@
     box.innerHTML = `<h2>${title}</h2>
       <p class="muted">${r.showdown ? '쇼다운' : '상대 폴드'}</p>
       ${handsHtml}
-      <div class="big-amt">팟 ${fmt(r.pot)}</div>
-      <p class="muted">내 칩 ${fmt(App.stacks[me])} (${myDelta >= 0 ? '+' : ''}${fmt(myDelta)})</p>
+      <div class="big-amt">팟 ${won(r.pot)}</div>
+      <p class="muted">내 머니 ${won(App.stacks[me])} (${myDelta >= 0 ? '+' : ''}${won(myDelta)})</p>
       <div class="modal-actions">
         <button class="btn-again" id="mAgain">${busted ? '다시 시작' : '다음 핸드'}</button>
         <button class="btn-home" id="mHome">메인</button>
@@ -253,10 +254,35 @@
     const s = App.state; if (!s) return;
     if (dealAnim) App.preHandStacks = s.players.map(p => p.stack + p.committed); // 핸드 시작 칩(증감 계산용)
     const pot = s.players.reduce((a, p) => a + p.committed, 0);
-    $('#potAmt').textContent = fmt(pot);
+    $('#potAmt').textContent = won(pot);
+    renderPotChips(pot);
     if (App.game !== 'seven') renderCommunity(s.community);
     for (let i = 0; i < s.players.length; i++) renderSeat(i, s, dealAnim);
     placeHeroInfo();
+  }
+  // 팟 금액을 실사 칩(액면가=색상) 더미로 표현. 큰 액면부터 분해해 색별 스택, 6장 넘으면 ×N 뱃지.
+  const CHIP_DENOMS = [{ n: 'purple', v: 500 }, { n: 'black', v: 100 }, { n: 'green', v: 25 }, { n: 'blue', v: 10 }, { n: 'red', v: 5 }, { n: 'white', v: 1 }];
+  const CHIP_W = 42, CHIP_STEP = 4, CHIP_H = Math.round(CHIP_W * 134 / 200), CHIP_MAXVIS = 6;
+  function renderPotChips(pot) {
+    const box = $('#potChips'); if (!box) return;
+    if (box.dataset.pot === String(pot)) return;
+    box.dataset.pot = String(pot); box.innerHTML = '';
+    if (pot <= 0) return;
+    let rem = pot;
+    for (const d of CHIP_DENOMS) {
+      const c = Math.floor(rem / d.v); if (c <= 0) continue; rem -= c * d.v;
+      const stack = document.createElement('div'); stack.className = 'chip-stack';
+      const vis = Math.min(c, CHIP_MAXVIS);
+      for (let i = 0; i < vis; i++) {
+        const img = document.createElement('img'); img.className = 'chip-img';
+        img.src = 'img/chips/chip_' + d.n + '.png'; img.alt = '';
+        img.style.bottom = (i * CHIP_STEP) + 'px'; img.style.zIndex = String(i + 1);
+        stack.appendChild(img);
+      }
+      if (c > CHIP_MAXVIS) { const b = document.createElement('div'); b.className = 'chip-badge'; b.textContent = '×' + c; stack.appendChild(b); }
+      stack.style.height = (CHIP_H + (vis - 1) * CHIP_STEP) + 'px';
+      box.appendChild(stack);
+    }
   }
   // 현재 알고 있는 카드로 만들어진 족보 이름. (히어로=항상, 상대=쇼다운 시. 세븐은 상대 오픈카드도 참고)
   function handLabel(cards) {
@@ -284,7 +310,7 @@
     const p = s.players[i], isMe = i === App.mySeat;
     seat.querySelector('.seat-name').textContent = App.names[i] || ('P' + i);
     seat.querySelector('.seat-av').textContent = App.avatars[i] || '🙂';
-    seat.querySelector('.seat-stack').textContent = fmt(p.stack);
+    seat.querySelector('.seat-stack').textContent = won(p.stack);
     // 현재 족보 라벨
     const handEl = seat.querySelector('.seat-hand');
     const known = knownCards(i, s);
@@ -296,7 +322,7 @@
     seat.classList.toggle('active', s.phase === 'betting' && s.toAct === i);
     seat.querySelector('.seat-dealer').hidden = s.button !== i;
     const bet = seat.querySelector('.seat-bet');
-    if (p.bet > 0) { bet.hidden = false; bet.textContent = fmt(p.bet); } else bet.hidden = true;
+    if (p.bet > 0) { bet.hidden = false; bet.textContent = won(p.bet); } else bet.hidden = true;
     const cardBox = isMe ? $('#heroCards') : seat.querySelector('.seat-cards');
     renderSeatCards(cardBox, i, s, isMe);
   }
@@ -350,9 +376,9 @@
     }, delay);
   }
   function flyOne(fromR, toR, jitter, dur) {
-    const chip = document.createElement('div'); chip.className = 'chip-fly'; chip.textContent = '🪙';
-    chip.style.left = (fromR.left + fromR.width / 2 - 27 + (jitter ? Math.random() * 22 - 11 : 0)) + 'px';
-    chip.style.top = (fromR.top + fromR.height / 2 - 27) + 'px';
+    const chip = document.createElement('div'); chip.className = 'chip-fly'; chip.innerHTML = '<img src="img/chips/chip_blue.png" alt="">';
+    chip.style.left = (fromR.left + fromR.width / 2 - 24 + (jitter ? Math.random() * 22 - 11 : 0)) + 'px';
+    chip.style.top = (fromR.top + fromR.height / 2 - 16) + 'px';
     document.body.appendChild(chip);
     const dx = (toR.left + toR.width / 2) - (fromR.left + fromR.width / 2), dy = (toR.top + toR.height / 2) - (fromR.top + fromR.height / 2);
     let done = false; const land = () => { if (done) return; done = true; try { chip.remove(); } catch (_) {} };
@@ -377,7 +403,7 @@
     const la = App.engine.legalActions(App.state); if (!la) { idleActions(); return; }
     $('#actions').classList.remove('idle');
     const fold = $('#btnFold'); fold.disabled = false;
-    const call = $('#btnCall'); call.disabled = false; call.textContent = la.canCheck ? '체크' : ('콜 ' + fmt(la.callAmount));
+    const call = $('#btnCall'); call.disabled = false; call.textContent = la.canCheck ? '체크' : ('콜 ' + won(la.callAmount));
     const raise = $('#btnRaise'); raise.disabled = !la.canRaise; raise.textContent = la.toCall === 0 ? '벳' : '레이즈';
   }
   function idleActions() {
