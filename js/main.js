@@ -181,6 +181,7 @@
     const r = App.engine.act(App.state, a);
     if (r && r.ok === false) { toast(r.error, 'red'); return; }
     if (App.state.players[App.mySeat].committed > c0) flyChipToPot(App.mySeat);
+    actBubble(App.mySeat, a);
     if (a.type === 'fold') foldAnim(App.mySeat);
     afterStreetFx(before); drive();
   }
@@ -420,9 +421,21 @@
   }
 
   /* ---------------- 잡동사니 ---------------- */
-  function announceAI(i, a) {
-    const m = { fold: '폴드', check: '체크', call: '콜', raise: '레이즈', allin: '올인 🔥' };
-    toast(`${App.names[i]}: ${m[a.type] || a.type}`, a.type === 'allin' ? 'red' : '');
+  function announceAI(i, a) { actBubble(i, a); }
+  // 액션 말풍선: 해당 플레이어 상태창 바로 위에 표시 (스테이지 레이어 → 폴드 흐림 영향 X)
+  function actBubble(i, a) {
+    const seat = $('#seats').children[i]; if (!seat) return;
+    const info = seat.querySelector('.seat-info'), stage = $('#stage'); if (!info || !stage) return;
+    const ir = info.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+    if (!ir.width) return;
+    const label = { fold: '폴드', check: '체크', call: '콜', raise: '레이즈', bet: '벳', allin: '올인!' }[a.type] || a.type;
+    const b = document.createElement('div');
+    b.className = 'act-bubble t-' + a.type; b.textContent = label;
+    stage.appendChild(b);
+    b.style.left = Math.round(ir.left + ir.width / 2 - sr.left) + 'px';
+    b.style.top = Math.round(ir.top - sr.top - 7) + 'px';
+    requestAnimationFrame(() => b.classList.add('show'));
+    setTimeout(() => { b.classList.remove('show'); setTimeout(() => b.remove(), 220); }, 1400);
   }
   function toast(text, variant) { const t = document.createElement('div'); t.className = 'toast' + (variant ? ' ' + variant : ''); t.textContent = text; $('#toasts').appendChild(t); setTimeout(() => t.remove(), 1500); }
 
