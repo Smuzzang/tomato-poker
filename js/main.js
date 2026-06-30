@@ -14,6 +14,7 @@
     mode: null, game: 'holdem', diff: 'normal', seats: 6, nick: '나',
     engine: null, aiDecide: null, state: null, nSeats: 6, mySeat: 0,
     stacks: [], button: 0, names: [], avatars: [], busy: false, revealOpp: false, _commShown: 0,
+    online: null, net: null, seatType: null, connSeat: null, _hid: 0,   // 온라인: 'host'|'guest'
   };
   const fmt = n => (n || 0).toLocaleString('en-US');
   const won = n => fmt(n) + '원';   // 가상머니 단위(원)
@@ -26,9 +27,13 @@
     segHandler('#seatSeg', 'seats', v => App.seats = Number(v));
     segHandler('#diffSeg', 'diff', v => App.diff = v);
     $('#btnSingle').addEventListener('click', startSingle);
-    $('#btnHost').addEventListener('click', () => toast('온라인 대전은 다음 업데이트에서!', 'red'));
+    $('#btnHost').addEventListener('click', startHost);
+    $('#btnJoin').addEventListener('click', () => { const c = ($('#joinCode').value || '').replace(/\D/g, '').slice(0, 6); if (c.length < 6) { toast('방 코드 6자리를 입력하세요', 'red'); return; } startGuest(c); });
+    $('#waitStart').addEventListener('click', () => { if (App.online === 'host') startHostGame(); });
+    $('#waitList').addEventListener('click', e => { const b = e.target.closest('.wbtn'); if (b) setSeatAI(Number(b.dataset.seat), b.dataset.act === 'addai'); });
+    $('#waitLeave').addEventListener('click', () => { if (App.online === 'host' && App.net) App.net.broadcast({ t: 'end' }); leaveOnline(); });
     $('#btnHelp').addEventListener('click', () => { const h = $('#help'); h.hidden = !h.hidden; if (!h.innerHTML) h.innerHTML = HELP; });
-    $('#leaveBtn').addEventListener('click', () => { App.state = null; show('lobby'); });
+    $('#leaveBtn').addEventListener('click', () => { if (App.online) { if (App.online === 'host' && App.net) App.net.broadcast({ t: 'end' }); leaveOnline(); } else { App.state = null; show('lobby'); } });
     $('#btnFold').addEventListener('click', () => myAct({ type: 'fold' }));
     $('#btnCall').addEventListener('click', () => myAct(callAction()));
     $('#btnRaise').addEventListener('click', openRaise);
@@ -44,11 +49,11 @@
     $(sel).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $(sel).querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); cb(b.dataset[key]); });
   }
   function nickname() { const n = ($('#nickname').value || '').trim() || '플레이어'; localStorage.setItem('tpoker_nick', n); return n.slice(0, 8); }
-  function show(id) { ['lobby', 'table'].forEach(s => $('#' + s).hidden = (s !== id)); }
+  function show(id) { ['lobby', 'waiting', 'table'].forEach(s => { const el = $('#' + s); if (el) el.hidden = (s !== id); }); }
 
   /* ---------------- 게임 시작 ---------------- */
   function startSingle() {
-    App.mode = 'single'; App.nick = nickname(); App.mySeat = 0;
+    App.mode = 'single'; App.online = null; App.seatType = null; App.nick = nickname(); App.mySeat = 0;
     if (App.game === 'seven') { App.engine = window.Seven; App.aiDecide = (s, i, d) => AI.decideSeven(s, i, d); App.nSeats = App.seats; }
     else { App.engine = window.HoldemN; App.aiDecide = (s, i, d) => AI.decide(s, i, d); App.nSeats = App.seats; }
     App.stacks = new Array(App.nSeats).fill(START_STACK);
@@ -63,7 +68,7 @@
   }
 
   function newHand() {
-    App.revealOpp = false; App.busy = false; App._commShown = 0;
+    App.revealOpp = false; App.busy = false; App._commShown = 0; App._hid = (App._hid || 0) + 1;
     // 파산자 제외하고 진행. 한 명만 칩 남으면 게임 종료
     const alive = App.stacks.filter(s => s > 0).length;
     if (alive < 2) { App.stacks = App.stacks.map(() => START_STACK); } // 단순화: 전원 리셋
@@ -139,28 +144,50 @@
   }
 
   /* ---------------- 진행 ---------------- */
+  function seatKind(i) { if (i === App.mySeat) return 'me'; return (App.seatType && App.seatType[i]) || 'ai'; }
+  // 한 액션을 엔진에 적용 + 공통 연출 + (호스트면) 이벤트 중계
+  function applyAction(i, a) {
+    const c0 = App.state.players[i].committed;
+    const r = App.engine.act(App.state, a);
+    if (r && r.ok === false) return r;
+    if (App.state.players[i].committed > c0) flyChipToPot(i);
+    actBubble(i, a);
+    if (a.type === 'fold') foldAnim(i);
+    if (App.online === 'host') App.net.broadcast({ t: 'evt', seat: i, action: a });
+    return r;
+  }
   function drive() {
     const s = App.state; if (!s) return;
+    if (App.online === 'guest') { render(); return; }   // 게스트는 호스트 스냅샷만 렌더
     if (s.phase === 'done') { onHandDone(); return; }
     render();
+    if (App.online === 'host') broadcastState();
     const pause = App._streetPause || 0; App._streetPause = 0;
-    if (s.toAct !== App.mySeat) { // AI
+    const kind = seatKind(s.toAct);
+    if (kind === 'ai') {
       hideActions(); App.busy = true;
       setTimeout(() => {
-        if (!App.state || App.state.phase !== 'betting' || App.state.toAct === App.mySeat) return;
-        const i = App.state.toAct, before = streetOf(App.state);
-        const a = App.aiDecide(App.state, i, App.diff);
-        const c = App.state.players[i].committed;
-        App.engine.act(App.state, a);
-        if (App.state.players[i].committed > c) flyChipToPot(i);
-        if (a.type === 'fold') foldAnim(i);
-        announceAI(i, a);
+        if (!App.state || App.state.phase !== 'betting' || seatKind(App.state.toAct) !== 'ai') return;
+        const j = App.state.toAct, before = streetOf(App.state);
+        applyAction(j, App.aiDecide(App.state, j, App.diff));
         App.busy = false; afterStreetFx(before); drive();
       }, pause + 650 + Math.random() * 450);
+    } else if (kind === 'remote') {
+      hideActions(); App.busy = true;   // 해당 게스트의 액션을 onData에서 기다림
     } else {
       App.busy = true; hideActions();
       setTimeout(() => { App.busy = false; if (App.state && App.state.phase === 'betting' && App.state.toAct === App.mySeat) showActions(); }, pause + 150);
     }
+  }
+  // 호스트: 게스트가 보낸 액션 적용
+  function onRemoteAct(conn, action) {
+    if (App.online !== 'host' || !App.state || App.state.phase !== 'betting') return;
+    const seat = App.connSeat.get(conn);
+    if (seat == null || App.state.toAct !== seat) return;
+    const before = streetOf(App.state);
+    const r = applyAction(seat, action);
+    if (r && r.ok === false) return;
+    afterStreetFx(before); drive();
   }
 
   function streetOf(s) { return App.game === 'seven' ? ('s' + s.street) : (s.street + '/' + s.community.length); }
@@ -178,12 +205,10 @@
   function myAct(a) {
     if (App.busy || !App.state || App.state.phase !== 'betting' || App.state.toAct !== App.mySeat) return;
     $('#raisePanel').hidden = true;
-    const before = streetOf(App.state), c0 = App.state.players[App.mySeat].committed;
-    const r = App.engine.act(App.state, a);
+    if (App.online === 'guest') { App.net.send({ t: 'act', action: a }); App.busy = true; hideActions(); return; }
+    const before = streetOf(App.state);
+    const r = applyAction(App.mySeat, a);
     if (r && r.ok === false) { toast(r.error, 'red'); return; }
-    if (App.state.players[App.mySeat].committed > c0) flyChipToPot(App.mySeat);
-    actBubble(App.mySeat, a);
-    if (a.type === 'fold') foldAnim(App.mySeat);
     afterStreetFx(before); drive();
   }
   function openRaise() {
@@ -210,6 +235,7 @@
     const s = App.state, r = s.result;
     App.revealOpp = !!r.showdown;
     render();
+    if (App.online === 'host') broadcastState();
     hideActions();
     $('#potAmt').textContent = won(r.pot);
     App.stacks = r.stacks.slice();
@@ -246,7 +272,7 @@
       </div>`;
     $('#modal').hidden = false;
     $('#mAgain').onclick = () => { $('#modal').hidden = true; if (busted) App.stacks = App.stacks.map(() => START_STACK); App.button = (App.button + 1) % App.nSeats; newHand(); };
-    $('#mHome').onclick = () => { App.state = null; show('lobby'); };
+    $('#mHome').onclick = () => { if (App.online === 'host' && App.net) { App.net.broadcast({ t: 'end' }); leaveOnline(); } else { App.state = null; show('lobby'); } };
   }
 
   /* ---------------- 렌더 ---------------- */
@@ -468,6 +494,170 @@
   const HELP = `<b>홀덤</b> 개인 2장 + 공용 5장으로 최고 5장 경쟁. 프리플랍·플랍·턴·리버 베팅.<br>
     <b>세븐포커</b> 3장(2히든1오픈) 받고 4·5·6오픈·7히든, 7장 중 베스트5.<br>
     <b>액션</b> 폴드 / 체크·콜 / 벳·레이즈 / 올인. <b>인원</b> 빈 자리는 AI.`;
+
+  /* ================= 온라인 (PeerJS N인, 호스트 권위) ================= */
+  function startHost() {
+    App.nick = nickname(); App.online = 'host'; App.nSeats = App.seats; App.mySeat = 0;
+    App.names = [App.nick]; App.avatars = ['🙂'];
+    App.seatType = ['me']; App.connSeat = new Map();
+    for (let i = 1; i < App.nSeats; i++) { App.names.push(''); App.avatars.push('🪑'); App.seatType.push('open'); }
+    App.net = Net.host({
+      onReady: code => { App._roomCode = code; renderWaiting(); },
+      onJoin: conn => assignSeat(conn),
+      onData: (msg, conn) => hostOnData(msg, conn),
+      onLeave: conn => releaseSeat(conn),
+      onError: e => toast('연결 오류: ' + (e.type || e), 'red'),
+    });
+    show('waiting'); renderWaiting();
+  }
+  function assignSeat(conn) {
+    let seat = -1;
+    for (let i = 1; i < App.nSeats; i++) { if (App.seatType[i] === 'open') { seat = i; break; } }
+    if (seat < 0) { App.net.sendTo(conn, { t: 'full' }); try { conn.close(); } catch (_) {} return; }
+    App.seatType[seat] = 'remote'; App.connSeat.set(conn, seat);
+    App.names[seat] = '게스트'; App.avatars[seat] = '🙂';
+    App.net.sendTo(conn, { t: 'welcome', seat, game: App.game, nSeats: App.nSeats });
+    renderWaiting(); broadcastLobby();
+  }
+  function releaseSeat(conn) {
+    const seat = App.connSeat.get(conn); if (seat == null) return;
+    App.connSeat.delete(conn);
+    if (App.state && App.state.phase === 'betting') {     // 게임 중 이탈 → 그 자리 AI 전환
+      App.seatType[seat] = 'ai'; App.names[seat] = AI_NAMES[(seat - 1) % AI_NAMES.length]; App.avatars[seat] = '🤖';
+      if (App.state.toAct === seat) { App.busy = false; drive(); } else broadcastState();
+    } else { App.seatType[seat] = 'open'; App.names[seat] = ''; App.avatars[seat] = '🪑'; renderWaiting(); broadcastLobby(); }
+  }
+  function hostOnData(msg, conn) {
+    if (!msg) return;
+    if (msg.t === 'hello') { const seat = App.connSeat.get(conn); if (seat != null) { App.names[seat] = (msg.name || '게스트').slice(0, 8); renderWaiting(); broadcastLobby(); } }
+    else if (msg.t === 'act') onRemoteAct(conn, msg.action);
+  }
+  function broadcastLobby() {
+    App.net.broadcast({ t: 'lobby', names: App.names, avatars: App.avatars, seatType: App.seatType.map(x => x === 'me' ? 'host' : x), nSeats: App.nSeats, mySeatOnHost: 0 });
+  }
+  function startHostGame() {
+    // 활성 좌석 = 나 + (ai/remote). open(빈자리)은 제외하고 0..K-1로 압축
+    const active = [];
+    for (let i = 0; i < App.nSeats; i++) if (i === App.mySeat || App.seatType[i] === 'ai' || App.seatType[i] === 'remote') active.push(i);
+    if (active.length < 2) { toast('2명 이상이어야 시작 (AI 추가 또는 참가자 대기)', 'red'); return; }
+    const names = [], avatars = [], seatType = [], connSeat = new Map();
+    active.forEach((old, ni) => {
+      names.push(App.names[old]); avatars.push(App.avatars[old]);
+      seatType.push(old === App.mySeat ? 'me' : App.seatType[old]);
+      if (App.seatType[old] === 'remote') for (const [c, s] of App.connSeat) if (s === old) connSeat.set(c, ni);
+    });
+    App.names = names; App.avatars = avatars; App.seatType = seatType; App.connSeat = connSeat;
+    App.nSeats = active.length; App.mySeat = seatType.indexOf('me');
+    if (App.game === 'seven') { App.engine = window.Seven; App.aiDecide = (s, i, d) => AI.decideSeven(s, i, d); }
+    else { App.engine = window.HoldemN; App.aiDecide = (s, i, d) => AI.decide(s, i, d); }
+    App.stacks = new Array(App.nSeats).fill(START_STACK);
+    App.button = Math.floor(Math.random() * App.nSeats);
+    $('#table').classList.toggle('seven', App.game === 'seven');
+    $('#heroCards').classList.toggle('seven', App.game === 'seven');
+    for (const [conn, seat] of App.connSeat) App.net.sendTo(conn, { t: 'start', seat, game: App.game, nSeats: App.nSeats, names: App.names, avatars: App.avatars });
+    buildSeats(App.nSeats); show('table'); newHand();
+  }
+  function broadcastState() {
+    if (App.online !== 'host' || !App.net) return;
+    for (const [conn, seat] of App.connSeat) App.net.sendTo(conn, snapshotFor(seat));
+  }
+  function snapshotFor(seat) {
+    const s = App.state, reveal = App.revealOpp;
+    const base = {
+      phase: s.phase, toAct: s.toAct, street: s.street, button: s.button, currentBet: s.currentBet,
+      community: (s.community || []).map(c => ({ r: c.r, s: c.s })),
+      players: s.players.map(p => ({ stack: p.stack, bet: p.bet, committed: p.committed, folded: p.folded, allIn: p.allIn })),
+      result: s.result || null,
+    };
+    s.players.forEach((p, i) => {
+      const showAll = (i === seat) || (reveal && !p.folded);
+      if (App.game === 'seven') base.players[i].cards = (p.cards || []).map(c => (showAll || c.up) ? { r: c.r, s: c.s, up: c.up } : { r: 0, s: 0, up: false });
+      else base.players[i].hole = (p.hole || []).map(c => showAll ? { r: c.r, s: c.s } : { r: 0, s: 0 });
+    });
+    return { t: 'snap', state: base, revealOpp: reveal, hid: App._hid || 0, names: App.names, avatars: App.avatars };
+  }
+
+  /* 게스트 */
+  function startGuest(code) {
+    App.nick = nickname(); App.online = 'guest';
+    App.net = Net.join(code, {
+      onConnected: () => App.net.send({ t: 'hello', name: App.nick }),
+      onData: msg => guestOnData(msg),
+      onClose: () => { toast('연결 종료', 'red'); leaveOnline(); },
+      onError: e => toast('접속 실패: ' + (e.type || e), 'red'),
+    });
+    show('waiting'); $('#waitInfo').textContent = '호스트에 접속 중…'; $('#waitCode').textContent = code; $('#waitStartRow').hidden = true;
+  }
+  function guestOnData(msg) {
+    if (!msg) return;
+    if (msg.t === 'welcome') { App.mySeat = msg.seat; App.game = msg.game; App.nSeats = msg.nSeats; $('#waitInfo').textContent = '대기실 — 호스트가 시작하길 기다리는 중…'; }
+    else if (msg.t === 'lobby') { App.names = msg.names; App.avatars = msg.avatars; App.seatType = msg.seatType; App.nSeats = msg.nSeats; renderWaiting(); }
+    else if (msg.t === 'full') { toast('방이 가득 찼어요', 'red'); leaveOnline(); }
+    else if (msg.t === 'start') { if (msg.seat != null) App.mySeat = msg.seat; App.game = msg.game; App.nSeats = msg.nSeats; App.names = msg.names; App.avatars = msg.avatars; $('#table').classList.toggle('seven', App.game === 'seven'); $('#heroCards').classList.toggle('seven', App.game === 'seven'); buildSeats(App.nSeats); show('table'); }
+    else if (msg.t === 'evt') { if (msg.seat !== App.mySeat) { actBubble(msg.seat, msg.action); flyChipToPot(msg.seat); } }
+    else if (msg.t === 'snap') applySnap(msg);
+    else if (msg.t === 'end') { toast('호스트가 게임을 종료했어요', 'red'); leaveOnline(); }
+  }
+  function applySnap(msg) {
+    const fresh = msg.hid !== App._hid;
+    App._hid = msg.hid; App.names = msg.names || App.names; App.avatars = msg.avatars || App.avatars; App.revealOpp = !!msg.revealOpp;
+    App.state = msg.state;
+    if (fresh) { $('#modal').hidden = true; $('#boardMsg').textContent = ''; resetCardAreas(); App._commShown = 0; App._guestPre = (App.state.players[App.mySeat] || {}).stack; }
+    if (App._guestPre == null) App._guestPre = (App.state.players[App.mySeat] || {}).stack;
+    render(fresh);
+    if (App.state.phase === 'done') { App.stacks = App.state.result.stacks.slice(); guestResult(App.state.result); }
+    else if (App.state.phase === 'betting' && App.state.toAct === App.mySeat) { App.busy = false; showActions(); }
+    else { App.busy = true; hideActions(); }
+  }
+  function guestResult(r) {
+    const me = App.mySeat, iWon = (r.winners || []).includes(me);
+    const delta = r.stacks[me] - (App._guestPre != null ? App._guestPre : r.stacks[me]);
+    let handsHtml = '';
+    if (r.showdown && r.hands) handsHtml = '<div class="show-hands">' + Object.keys(r.hands).map(Number).map(i => {
+      const best = (r.hands[i].best || []).map(c => `<div class="pcard"><img src="${Cards.imgPath(c)}"></div>`).join('');
+      return `<div class="sh${(r.winners || []).includes(i) ? ' win' : ''}"><div class="nm">${App.names[i]}</div><div class="cards">${best}</div><div class="cat">${Eval.catName(r.hands[i].cat)}</div></div>`;
+    }).join('') + '</div>';
+    setTimeout(() => {
+      $('#modalBox').innerHTML = `<h2>${iWon ? '🎉 승리!' : '😢 패배'}</h2><p class="muted">${r.showdown ? '쇼다운' : '상대 폴드'}</p>${handsHtml}
+        <div class="big-amt">팟 ${won(r.pot)}</div><p class="muted">내 머니 ${won(r.stacks[me])} (${delta >= 0 ? '+' : ''}${won(delta)})</p>
+        <p class="muted">호스트가 다음 핸드를 시작합니다…</p>
+        <div class="modal-actions"><button class="btn-home" id="mHome">나가기</button></div>`;
+      $('#modal').hidden = false; $('#mHome').onclick = leaveOnline;
+    }, r.showdown ? 1700 : 1000);
+  }
+
+  function renderWaiting() {
+    $('#waitCode').textContent = App._roomCode || '------';
+    const list = $('#waitList'); if (!list) return; list.innerHTML = '';
+    const isHost = App.online === 'host';
+    for (let i = 0; i < App.nSeats; i++) {
+      const t = App.seatType ? App.seatType[i] : 'open';
+      const nm = i === App.mySeat ? (App.nick + ' (나)') : (App.names[i] || (t === 'open' ? '빈자리' : t === 'ai' ? 'AI' : '게스트'));
+      const av = App.avatars[i] || (t === 'open' ? '🪑' : (t === 'ai' ? '🤖' : '🙂'));
+      const kind = (i === App.mySeat) ? (isHost ? '방장' : '나') : t === 'remote' ? '참가' : t === 'host' ? '방장' : t === 'ai' ? 'AI' : '대기';
+      const row = document.createElement('div'); row.className = 'wait-row' + (t === 'open' ? ' open' : '');
+      let btn = '';
+      if (isHost && i !== App.mySeat && t !== 'remote' && t !== 'host') {
+        btn = (t === 'ai')
+          ? `<button class="wbtn rm" data-seat="${i}" data-act="rmai">AI 빼기</button>`
+          : `<button class="wbtn" data-seat="${i}" data-act="addai">AI 추가</button>`;
+      }
+      row.innerHTML = `<span class="wav">${av}</span><span class="wnm"></span><span class="wkind">${kind}</span>${btn}`;
+      row.querySelector('.wnm').textContent = nm; list.appendChild(row);
+    }
+    $('#waitStartRow').hidden = !isHost;
+  }
+  function setSeatAI(i, on) {
+    if (App.online !== 'host' || !App.seatType || App.seatType[i] === 'remote') return;
+    if (on) { App.seatType[i] = 'ai'; App.names[i] = AI_NAMES[(i - 1) % AI_NAMES.length]; App.avatars[i] = AI_AV[(i - 1) % AI_AV.length]; }
+    else { App.seatType[i] = 'open'; App.names[i] = ''; App.avatars[i] = '🪑'; }
+    renderWaiting(); broadcastLobby();
+  }
+  function leaveOnline() {
+    try { App.net && App.net.close && App.net.close(); } catch (_) {}
+    App.online = null; App.net = null; App.state = null; App.seatType = null;
+    $('#modal').hidden = true; show('lobby');
+  }
 
   window.addEventListener('DOMContentLoaded', initLobby);
 })();
