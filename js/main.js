@@ -120,8 +120,9 @@
         bet.style.left = '50%'; bet.style.top = '0'; bet.style.transform = 'translate(-50%,-160%)';
         continue;
       }
-      const ang = seatDeg(i, n) * Math.PI / 180;
-      const x = cx + rx * Math.cos(ang), y = cy + ry * Math.sin(ang);
+      let x, y;
+      if (n <= 2) { x = 78; y = 14; }   // 헤즈업: 상대를 우상단 구석으로(상단 카드홀더·중앙 공용패와 안 겹치게)
+      else { const ang = seatDeg(i, n) * Math.PI / 180; x = cx + rx * Math.cos(ang); y = cy + ry * Math.sin(ang); }
       seat.style.bottom = 'auto';
       seat.style.left = x + '%'; seat.style.top = y + '%';
       // 베팅 칩: 자리→중앙 방향으로 살짝
